@@ -14,16 +14,40 @@ console = Console()
 
 # Constants and default values
 DEFAULT_THREAD_COUNT = 32
-DEFAULT_MANIFEST_PATH = '/home/gaoyx/san_78/yocto_mt8678/.repo/manifests/yocto.xml'
+DEFAULT_MANIFEST_PATH = '/home/gaoyx/san_78/alps/.repo/manifests/alps.xml'
 DEFAULT_PATCH_OUTPUT_PATH = '/mnt/d/patch/yocto'
 DEFAULT_TAG1 = ''
 DEFAULT_TAG2 = ''
+REPO_TOOL_PATH = '/home/gaoyx/.bin/repo'
+REPO_ROOT_PATH = '/home/gaoyx/san_78/alps'
+
+# Function to get the latest and second latest tags from the first repo
+def get_tags(repo_root_path, manifest_path):
+    # Parse the manifest to get the first project path
+    repo_paths = parse_manifest(manifest_path, repo_root_path)
+    first_repo_path = os.path.join(repo_root_path, repo_paths[0])
+    # Change directory to the first repo path
+    os.chdir(first_repo_path)
+    # Get the latest tag
+    latest_tag = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'], capture_output=True, text=True, check=True).stdout.strip()
+    # Get the list of tags, sorted by creation date
+    tags = subprocess.run(['git', 'tag', '--sort=-creatordate'], capture_output=True, text=True, check=True).stdout.strip().split('\n')
+    # The second latest tag is the one before the latest
+    second_latest_tag = tags[tags.index(latest_tag) - 1]
+    return latest_tag, second_latest_tag
+
+# Function to generate snapshot manifest using repo command
+def generate_snapshot_manifest_with_repo(repo_tool_path, repo_root_path):
+    # Change directory to the repo root
+    os.chdir(repo_root_path)
+    subprocess.run([repo_tool_path, 'manifest', '-r', '-o', 'snapshot.xml'], check=True)
+    console.log(f'Snapshot manifest generated at: {os.path.join(repo_root_path, "snapshot.xml")}')
 
 # Function to parse the manifest file and get repository paths
-def parse_manifest(manifest_path):
+def parse_manifest(manifest_path, repo_root_path):
     tree = ET.parse(manifest_path)
     root = tree.getroot()
-    repo_paths = [os.path.join('/home/gaoyx/san_78/yocto_mt8678', project.get('path')) for project in root.findall('project')]
+    repo_paths = [os.path.join(repo_root_path, project.get('path')) for project in root.findall('project')]
     return repo_paths
 
 # Function to generate patches between tags and return the list of new patch files
@@ -47,11 +71,11 @@ def generate_patches(repo_path, tag1, tag2, output_path):
     return [os.path.join(repo_path, f) for f in new_patches]
 
 # Function to copy new patches to the output path and zip them
-def copy_and_zip_patches(new_patches, patch_output_path):
+def copy_and_zip_patches(new_patches, patch_output_path, repo_root_path):
     zip_file_path = os.path.join(patch_output_path, 'patches.zip')
     with ZipFile(zip_file_path, 'w') as zipf:
         for patch_full_path in new_patches:
-            relative_patch_path = os.path.relpath(os.path.dirname(patch_full_path), '/home/gaoyx/san_78/yocto_mt8678')
+            relative_patch_path = os.path.relpath(os.path.dirname(patch_full_path), repo_root_path)
             target_dir = os.path.join(patch_output_path, relative_patch_path)
             os.makedirs(target_dir, exist_ok=True)
             shutil.copy(patch_full_path, target_dir)
@@ -73,25 +97,29 @@ def worker(repo_queue, tag1, tag2, patch_output_path, tag_repos, generated_patch
         generated_patches.extend(generate_patches(repo_path, tag1, tag2, repo_path))
         repo_queue.task_done()
 
-# Function to generate snapshot manifest
-def generate_snapshot_manifest(repo_paths, snapshot_path):
-    snapshot_file_path = os.path.join(snapshot_path, 'snapshot.xml')
-    root = ET.Element('manifest')
+# # Function to generate snapshot manifest
+# def generate_snapshot_manifest(repo_paths, snapshot_path):
+#     snapshot_file_path = os.path.join(snapshot_path, 'snapshot.xml')
+#     root = ET.Element('manifest')
 
-    for repo_path in repo_paths:
-        project = ET.SubElement(root, 'project')
-        project.set('path', os.path.relpath(repo_path, '/home/gaoyx/san_78/yocto_mt8678'))
-        project.set('revision', subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo_path, capture_output=True, text=True, check=True).stdout.strip())
+#     for repo_path in repo_paths:
+#         project = ET.SubElement(root, 'project')
+#         project.set('path', os.path.relpath(repo_path, '/home/gaoyx/san_78/yocto_mt8678'))
+#         project.set('revision', subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo_path, capture_output=True, text=True, check=True).stdout.strip())
 
-    tree = ET.ElementTree(root)
-    tree.write(snapshot_file_path)
-    console.log(f'Snapshot manifest generated at: {snapshot_file_path}')
+#     tree = ET.ElementTree(root)
+#     tree.write(snapshot_file_path)
+#     console.log(f'Snapshot manifest generated at: {snapshot_file_path}')
 
 # Main function to orchestrate the script execution
-def main(manifest_path=DEFAULT_MANIFEST_PATH, patch_output_path=DEFAULT_PATCH_OUTPUT_PATH, tag1=DEFAULT_TAG1, tag2=DEFAULT_TAG2, tag_repos=False):
-    repo_paths = parse_manifest(manifest_path)
+def main(manifest_path=DEFAULT_MANIFEST_PATH, patch_output_path=DEFAULT_PATCH_OUTPUT_PATH, repo_root_path=REPO_ROOT_PATH,tag1=DEFAULT_TAG1, tag2=DEFAULT_TAG2, tag_repos=False):
+    repo_paths = parse_manifest(manifest_path, repo_root_path)
     repo_queue = Queue()
     generated_patches = []  # List to track generated patches
+
+    # Get tags if not provided
+    if not tag1 or not tag2:
+        tag1, tag2 = get_tags(repo_root_path, manifest_path)
 
     # Enqueue repository paths
     for repo_path in repo_paths:
@@ -109,10 +137,10 @@ def main(manifest_path=DEFAULT_MANIFEST_PATH, patch_output_path=DEFAULT_PATCH_OU
         thread.join()
 
     # Copy patches and zip them
-    copy_and_zip_patches(generated_patches, patch_output_path)
+    copy_and_zip_patches(generated_patches, patch_output_path, repo_root_path)
 
-    # Generate snapshot manifest
-    generate_snapshot_manifest(repo_paths, os.getcwd())
+    # Generate snapshot manifest with repo
+    generate_snapshot_manifest_with_repo(REPO_TOOL_PATH, repo_root_path)
 
     console.log('Script execution completed.')
 
