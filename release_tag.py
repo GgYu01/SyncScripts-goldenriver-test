@@ -97,20 +97,6 @@ def worker(repo_queue, tag1, tag2, patch_output_path, tag_repos, generated_patch
         generated_patches.extend(generate_patches(repo_path, tag1, tag2, repo_path))
         repo_queue.task_done()
 
-# # Function to generate snapshot manifest
-# def generate_snapshot_manifest(repo_paths, snapshot_path):
-#     snapshot_file_path = os.path.join(snapshot_path, 'snapshot.xml')
-#     root = ET.Element('manifest')
-
-#     for repo_path in repo_paths:
-#         project = ET.SubElement(root, 'project')
-#         project.set('path', os.path.relpath(repo_path, '/home/gaoyx/san_78/yocto_mt8678'))
-#         project.set('revision', subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo_path, capture_output=True, text=True, check=True).stdout.strip())
-
-#     tree = ET.ElementTree(root)
-#     tree.write(snapshot_file_path)
-#     console.log(f'Snapshot manifest generated at: {snapshot_file_path}')
-
 # Main function to orchestrate the script execution
 def main(manifest_path=DEFAULT_MANIFEST_PATH, patch_output_path=DEFAULT_PATCH_OUTPUT_PATH, repo_root_path=REPO_ROOT_PATH,tag1=DEFAULT_TAG1, tag2=DEFAULT_TAG2, tag_repos=False):
     repo_paths = parse_manifest(manifest_path, repo_root_path)
