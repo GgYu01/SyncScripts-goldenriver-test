@@ -1,22 +1,31 @@
 import os
+import pickle
 import subprocess
+import time
+from tabulate import tabulate
+from termcolor import colored
+
 
 # Default parameters
-android_src_path = ''
-yocto_src_path = ''
-flash_image_output_path = ''
+PARAMETERS_FILE = 'Compile_parameters.pkl'
 
-def set_default_parameters():
-    global android_src_path, yocto_src_path, flash_image_output_path
-    if not android_src_path:
-        android_src_path = input("Enter the Android source code path: ")
-    if not yocto_src_path:
-        yocto_src_path = input("Enter the Yocto source code path: ")
-    if not flash_image_output_path:
-        flash_image_output_path = input("Enter the final output path of the flash image: ")
+# Function to load or prompt for parameters
+def load_or_prompt_parameters():
+    if os.path.exists(PARAMETERS_FILE):
+        with open(PARAMETERS_FILE, 'rb') as f:
+            parameters = pickle.load(f)
+    else:
+        parameters = {
+            'android_src_path': input("Enter the Android source code path: "),
+            'yocto_src_path': input("Enter the Yocto source code path: "),
+            'flash_image_output_path': input("Enter the final output path of the flash image: ")
+        }
+        with open(PARAMETERS_FILE, 'wb') as f:
+            pickle.dump(parameters, f)
+    return parameters
 
 def execute_command(command, cwd):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd)
+    process = subprocess.Popen(command, shell=True, executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd)
     stdout, _ = process.communicate()
     if process.returncode != 0:
         print(f"Command failed with return code {process.returncode}")
@@ -64,11 +73,22 @@ def rename_and_copy_files():
     yocto_images_path = os.path.join(yocto_src_path, 'build/tmp/deploy/images/auto8678p1_64_hyp_gpu')
     shutil.copytree(yocto_images_path, flash_image_output_path)
 
-# Main execution
-if __name__ == "__main__":
-    set_default_parameters()
+# Main function
+def main():
+    parameters = load_or_prompt_parameters()
+    headers = ["Parameter", "Value"]
+    data = [(k, v) for k, v in parameters.items()]
+    table = tabulate(data, headers, tablefmt="grid")
+    print(colored(table, 'cyan'))
+    time.sleep(50)  # Wait for 10 seconds before proceeding
     compile_android()
     compile_yocto()
     rename_and_copy_files()
+
+
+
+# Main execution
+if __name__ == "__main__":
+    main()
 
 # End of code
