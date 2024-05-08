@@ -15,12 +15,15 @@ rsync -aP --remove-source-files --info=progress2 line_home /mnt/DATA/
 7z a -t7z -v20g -mx=9 -m0=LZMA2 -mmt=32 MT8675_Hyper.7z MT8675_Hyper
 7z x yocto.7z.001 -r -o./output
 du -h --max-depth=1
-docker image prune -a
-docker system prune -a
+sudo docker image prune -a
+sudo docker system prune -a
 sudo apt remove git git-man
 sudo apt install git=1:2.25.1-1ubuntu3 git-man=1:2.25.1-1ubuntu3
 du -d 1 -h DATA/
 vnstat -i eth0 -l
+cat /proc/sys/vm/swappiness
+sudo sysctl vm.swappiness=100
+sudo gedit /etc/sysctl.conf
 
 7z a -t7z -mx=0 -m0=Copy -mmt=32 /mnt/DATA/output-tbox-user.7z /mnt/DATA/mmio_home/mt8675/out/tbox/user/output_load_spm8675/
 7z a -v20g -ttar -m0=Copy -mmt=32 yocto.tar yocto
