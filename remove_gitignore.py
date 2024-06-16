@@ -2,7 +2,7 @@ import os
 import logging
 
 # 设置日志
-log_path = '/mnt/sso/san_78/alps/log.log'
+log_path = '/mnt/sso/two_78/yocto/log.log'
 logging.basicConfig(filename=log_path, level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -27,7 +27,7 @@ def delete_gitignore_files(base_path):
         logging.error(f"Error walking through directory {base_path}: {e}")
 
 # 指定路径
-base_path = '/mnt/sso/san_78/alps'
+base_path = '/mnt/sso/two_78/yocto'
 
 # 执行函数
 delete_gitignore_files(base_path)

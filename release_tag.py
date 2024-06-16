@@ -72,7 +72,7 @@ def generate_patches(repo_path, tag1, tag2, output_path):
     
     try:
         # Generate patches only if there are changes
-        subprocess.run(['git', 'format-patch', f'{tag2}..{tag1}', '-o', output_path], cwd=repo_path, check=True)
+        subprocess.run(['git', 'format-patch', f'{tag1}..{tag2}', '-o', output_path], cwd=repo_path, check=True)
         console.log(f'Patches generated for repository: {repo_path}')
     except subprocess.CalledProcessError as e:
         console.log(f'Error generating patches for repository: {repo_path}', style="bold red")
