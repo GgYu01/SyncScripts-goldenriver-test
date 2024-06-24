@@ -123,8 +123,8 @@ repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b release-spm.
 repo init -u <URL to Manifest repository> --reference=/path/to/local-mirror
 
 # 78 android 解压
-tar zxf ALPS-DEV-U0.MP1-LIBER.AUTO-OF.P52.PRE.1_AUTO8678P1_64_BSP_WIFI_KERNEL.tar.gz -C /mnt/sso/temp
-cat ALPS-DEV-U0.MP1-LIBER.AUTO-OF.P52.PRE.1_AUTO8678P1_64_BSP_WIFI_INHOUSE.tar.gz* | tar zxf - -C /mnt/sso/temp
+tar zxf ALPS-DEV-U0.MP1-LIBER.AUTO-OF.P52.PRE.1_AUTO8678P1_64_BSP_WIFI_KERNEL.tar.gz -C /mnt/sso/one_78/user_home/android
+cat ALPS-DEV-U0.MP1-LIBER.AUTO-OF.P52.PRE.1_AUTO8678P1_64_BSP_WIFI_INHOUSE.tar.gz* | tar zxf - -C /mnt/sso/one_78/user_home/android
 
 git remote add origin ssh://gaoyx@www.goldenriver.com.cn:29420/yocto/src/hypervisor/grt
 git checkout -b release-spm.mt8678_2024_0524

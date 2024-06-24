@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import asyncio
 import os
 import subprocess
@@ -16,7 +18,7 @@ config = {
         'port': 29420,
     },
     'base_dir': '/mnt',
-    'project_name': 'two_78',
+    'project_name': 'wu_78',
     'branch': 'release-spm.mt8678_2024_0524',
     'repositories': {
         'repo': [
