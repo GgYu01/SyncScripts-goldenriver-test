@@ -24,8 +24,8 @@ gr-nebula.py export-buildroot
 gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images
 exit
 
-git tag release-spm.mt8678_2024_0620
-git push origin release-spm.mt8678_2024_0620
+git tag release-spm.mt8678_2024_0624
+git push origin release-spm.mt8678_2024_0624
 git push origin HEAD:refs/for/release-spm.mt8678_2024_0524
 
 cd ~/grt/thyp-sdk
@@ -42,11 +42,11 @@ cp -f products/mt8678-mix/guest-configs/uos_alps_pv8678.json ../../yocto/prebuil
 cp -f vmm/nbl_vm_srv/data/vm_srv_cfg_8678.pb.txt ../../yocto/prebuilt/hypervisor/grt/
 cp -f vmm/nbl_vmm/data/uos_mtk8678/uos_bootloader_lk2.pb.txt ../../yocto/prebuilt/hypervisor/grt/
 
-git push grt-mt8678 HEAD:refs/for/release-spm.mt8678_2024_0524%topic=trace_v1.0.1a
+git push grt-mt8678 HEAD:refs/for/release-spm.mt8678_2024_0524%topic=nbl_trace_v1.0.2b
 git push grt-mt8678 HEAD:refs/for/main
 
-repo forall -c "git tag release-spm.mt8678_2024_0620"
-repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0620"
+repo forall -c "git tag release-spm.mt8678_2024_0624"
+repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0624"
 
 grep -r -n -w .patch --include=".gitignore"
 

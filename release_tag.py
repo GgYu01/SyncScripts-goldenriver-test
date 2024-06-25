@@ -1,160 +1,297 @@
+#!/usr/bin/env python3
+
 import os
-import xml.etree.ElementTree as ET
-import threading
-from queue import Queue
 import subprocess
-import shutil
+import multiprocessing
+import zipfile
+from pathlib import Path
+from shutil import copy2
+import xml.etree.ElementTree as ET
+from prompt_toolkit import print_formatted_text, HTML
 from rich.console import Console
 from rich.traceback import install
-from zipfile import ZipFile
+from IPython.display import display
 
-# Install rich traceback for better error handling
+# Install rich traceback
 install()
+
+# Define the console for rich library output
 console = Console()
+from paramiko import SSHClient, AutoAddPolicy
+from prompt_toolkit import print_formatted_text, HTML
+from prompt_toolkit.shortcuts import clear
 
-# Constants and default values
-DEFAULT_THREAD_COUNT = 64
-REPO_INFO = {
-    'alps': {
-        'repo_path': '/home/gaoyx/san_78/alps',
-        'manifest_path': '/home/gaoyx/san_78/alps/.repo/manifests/alps.xml',
-        'output_path': '/mnt/d/78image/test/alps'
-    },
-    'yocto': {
-        'repo_path': '/home/gaoyx/san_78/yocto',
-        'manifest_path': '/home/gaoyx/san_78/yocto/.repo/manifests/yocto.xml',
-        'output_path': '/mnt/d/78image/test/yocto'
-    }
+# Global variables
+CODE_ROOT_DIR = "/mnt/"
+OUTPUT_DIR = "/mnt/hdo/78image/patch_release/MTK_{}"
+REPO_PATHS = {
+    'alps': './sst/one_78/alps',
+    'yocto': './sso/one_78/yocto'
 }
-DEFAULT_TAG1 = ''
-DEFAULT_TAG2 = ''
-REPO_TOOL_PATH = '/home/gaoyx/.bin/repo'
+GIT_PATHS = {
+    'grt': './sso/one_78/grt',
+    'zircon': './sso/one_78/grpower/workspace/nebula/zircon',
+    'garnet': './sso/one_78/grpower/workspace/nebula/garnet'
+}
+CATEGORY_A_REPOS = ['grt']
+CATEGORY_B_REPOS = ['zircon', 'garnet']
+NUM_PROCESSES = 64
+REMOTE_SERVER = '192.168.50.50'
+REMOTE_USER = 'Administrator'
+REMOTE_FILE_PATH = 'C:/Users/Administrator/Downloads/MT8678 Hypervisor Release Note.pdf'
+LOCAL_FILE_NAME = 'MT8678_Hypervisor_Release_Note.pdf'
 
-# Function to get the latest and second latest tags from the first repo
-def get_tags(repo_root_path, manifest_path):
-    # Parse the manifest to get the first project path
-    repo_paths = parse_manifest(manifest_path, repo_root_path)
-    first_repo_path = os.path.join(repo_root_path, repo_paths[0])
-    # Change directory to the first repo path
-    os.chdir(first_repo_path)
-    # Get the latest tag
-    latest_tag = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'], capture_output=True, text=True, check=True).stdout.strip()
-    # Get the list of tags, sorted by creation date
-    tags = subprocess.run(['git', 'tag', '--sort=-creatordate'], capture_output=True, text=True, check=True).stdout.strip().split('\n')
-    # The second latest tag is the one before the latest
-    second_latest_tag = tags[tags.index(latest_tag) - 1]
-    return latest_tag, second_latest_tag
+# Function to get the latest two tags from a git repository
+def get_latest_two_tags(repo_path):
+    """
+    Get the latest two tags from a git repository.
 
-# Function to generate snapshot manifest using repo command and move it to the output path
-def generate_snapshot_manifest_with_repo(repo_tool_path, repo_root_path, patch_output_path):
-    # Change directory to the repo root
-    os.chdir(repo_root_path)
-    # Generate the snapshot manifest
-    subprocess.run([repo_tool_path, 'manifest', '-r', '-o', 'snapshot.xml'], check=True)
-    snapshot_manifest_path = os.path.join(repo_root_path, "snapshot.xml")
-    console.log(f'Snapshot manifest generated at: {snapshot_manifest_path}')
-    
-    # Move the snapshot manifest to the patch output directory
-    shutil.move(snapshot_manifest_path, patch_output_path)
-    console.log(f'Snapshot manifest moved to: {os.path.join(patch_output_path, "snapshot.xml")}')
+    Parameters:
+    repo_path (str): The file system path to the git repository.
 
-# Function to parse the manifest file and get repository paths
-def parse_manifest(manifest_path, repo_root_path):
-    tree = ET.parse(manifest_path)
-    root = tree.getroot()
-    repo_paths = [os.path.join(repo_root_path, project.get('path')) for project in root.findall('project')]
-    return repo_paths
-
-# Function to generate patches between tags and return the list of new patch files
-def generate_patches(repo_path, tag1, tag2, output_path):
-    # Get the list of patch files before generating new ones
-    existing_patches = set(os.listdir(repo_path))
-    
+    Returns:
+    tuple: A tuple containing the latest and second latest tag names.
+    """
     try:
-        # Generate patches only if there are changes
-        subprocess.run(['git', 'format-patch', f'{tag1}..{tag2}', '-o', output_path], cwd=repo_path, check=True)
-        console.log(f'Patches generated for repository: {repo_path}')
+        # Change to the repository directory
+        os.chdir(repo_path)
+
+        # Get the latest two tags, sorted by creation date
+        latest_tags = subprocess.check_output(
+            ['git', 'tag', '--sort=-creatordate'],
+            encoding='utf-8'
+        ).split('\n')[:2]
+
+        if len(latest_tags) < 2:
+            print_formatted_text(HTML("<red>Error:</red> Not enough tags found in the repository."))
+            return None, None
+
+        # Return the latest and second latest tag names
+        return latest_tags[0], latest_tags[1]
     except subprocess.CalledProcessError as e:
-        console.log(f'Error generating patches for repository: {repo_path}', style="bold red")
-        return []
+        print_formatted_text(HTML("<red>An error occurred while fetching tags.</red>"))
+        return None, None
+    except Exception as e:
+        print_formatted_text(HTML("<red>An unexpected error occurred:</red>"))
+        return None, None
 
-    # Get the list of all patch files after generating new ones
-    all_patches = set(os.listdir(repo_path))
-    # Determine the new patches by subtracting the existing ones from all patches
-    new_patches = list(all_patches - existing_patches)
-    # Return the full paths of the new patch files
-    return [os.path.join(repo_path, f) for f in new_patches]
+def create_output_dir(tag_name):
+    """
+    Create the output directory for the given tag name.
+    If the directory already exists, exit with an error.
 
-# Function to copy new patches to the output path and zip them
-def copy_and_zip_patches(new_patches, patch_output_path, repo_root_path):
-    # Ensure the output directory exists
-    os.makedirs(patch_output_path, exist_ok=True)
-    
-    zip_file_path = os.path.join(patch_output_path, 'patches.zip')
-    with ZipFile(zip_file_path, 'w') as zipf:
-        for patch_full_path in new_patches:
-            relative_patch_path = os.path.relpath(os.path.dirname(patch_full_path), repo_root_path)
-            target_dir = os.path.join(patch_output_path, relative_patch_path)
-            # Ensure the target directory exists
-            os.makedirs(target_dir, exist_ok=True)
-            shutil.copy(patch_full_path, target_dir)
-            zipf.write(patch_full_path, os.path.join(relative_patch_path, os.path.basename(patch_full_path)))
-            console.log(f'Patch copied and added to zip: {patch_full_path}')
-    console.log(f'All patches zipped into: {zip_file_path}')
+    Parameters:
+    tag_name (str): The name of the latest tag to create the directory for.
 
-# Worker function for threading
-def worker(repo_queue, tag1, tag2, patch_output_path, tag_repos, generated_patches):
-    while not repo_queue.empty():
-        repo_path = repo_queue.get()
-        if tag_repos:
+    Returns:
+    str: The path to the created directory or None if an error occurred.
+    """
+    try:
+        # Format the directory path with the latest tag name
+        dir_path = OUTPUT_DIR.format(tag_name)
+
+        # Check if the directory already exists
+        if os.path.exists(dir_path):
+            print_formatted_text(HTML(f"<red>Error: The directory {dir_path} already exists.</red>"))
+            return None
+
+        # Create the directory
+        os.makedirs(dir_path)
+        print_formatted_text(HTML(f"<green>Success: Created the directory {dir_path}.</green>"))
+        return dir_path
+
+    except Exception as e:
+        print_formatted_text(HTML("<red>An unexpected error occurred while creating the directory:</red>"))
+        return None
+
+def add_file_to_zip(zip_file, file_path, arcname):
+    zip_file.write(file_path, arcname)
+    print_formatted_text(HTML(f"<green>Added {file_path} to zip archive as {arcname}</green>"))
+
+def handle_repo_warehouse(repo_name, repo_path, output_subdir, latest_tag, second_latest_tag, zip_file):
+    """
+    Handle operations for a repo warehouse.
+
+    Parameters:
+    repo_name (str): The name of the repo warehouse.
+    repo_path (str): The file system path to the repo warehouse.
+    output_subdir (str): The subdirectory name for the output.
+    latest_tag (str): The latest tag name.
+    second_latest_tag (str): The second latest tag name.
+
+    Returns:
+    bool: True if the operation was successful, False otherwise.
+    """
+    try:
+        # Change to the repo warehouse directory
+        os.chdir(repo_path)
+
+        # Read the manifest file to get all git repository paths
+        manifest_path = os.path.join('.repo', 'manifests', f'{repo_name}.xml')
+        tree = ET.parse(manifest_path)
+        root = tree.getroot()
+
+        # Iterate over the project elements to get the path attributes
+        for project in root.findall('project'):
+            git_repo_path = project.get('path')
+            full_git_repo_path = os.path.join(repo_path, git_repo_path)
+            os.chdir(full_git_repo_path)
             try:
-                # Tagging the repository
-                subprocess.run(['git', 'tag', tag1], cwd=repo_path, check=True)
-            except subprocess.CalledProcessError as e:
-                console.log(f'Error tagging repository: {repo_path}', style="bold red")
-        # Call the generate_patches function and collect generated patches
-        generated_patches.extend(generate_patches(repo_path, tag1, tag2, repo_path))
-        repo_queue.task_done()
+                # Generate patch files between the latest and penultimate tags
+                patch_files = subprocess.check_output(['git', 'format-patch', f'{second_latest_tag}..{latest_tag}'], text=True)
+                patch_files_list = patch_files.splitlines()
 
-# Main function to orchestrate the script execution for all repos
-def main(tag1=DEFAULT_TAG1, tag2=DEFAULT_TAG2, tag_repos=False):
-    for repo_id, info in REPO_INFO.items():
-        repo_root_path = info['repo_path']
-        manifest_path = info['manifest_path']
-        patch_output_path = info['output_path']
-        repo_paths = parse_manifest(manifest_path, repo_root_path)
-        repo_queue = Queue()
-        generated_patches = []  # List to track generated patches
+                # Create corresponding subdirectories in the output directory and copy patch files
+                for patch_file in patch_files_list:
+                    patch_file_path = os.path.join(full_git_repo_path, patch_file)
+                    relative_patch_path = os.path.relpath(patch_file_path, repo_path)
+                    output_patch_path = os.path.join(output_subdir, relative_patch_path)
+                    os.makedirs(os.path.dirname(output_patch_path), exist_ok=True)
+                    copy2(patch_file_path, output_patch_path)
+                    zip_file.write(output_patch_path, os.path.join(repo_name, os.path.relpath(output_patch_path, output_subdir)))
+                    print_formatted_text(HTML(f"<green>Copied and compressed patch file: {patch_file}</green>"))
+            except subprocess.CalledProcessError:
+                print_formatted_text(HTML(f"<yellow>Warning: Patch generation failed at {git_repo_path}</yellow>"))
 
-        # Get tags if not provided
-        if not tag1 or not tag2:
-            tag1, tag2 = get_tags(repo_root_path, manifest_path)
+        # Check if the output directory for the snapshot exists, create if not
+        os.makedirs(output_subdir, exist_ok=True)
 
-        # Enqueue repository paths
-        for repo_path in repo_paths:
-            repo_queue.put(repo_path)
+        # Generate snapshot manifest files
+        snapshot_path = os.path.join(output_subdir, 'snapshot.xml')
+        subprocess.run([os.path.expanduser('~/bin/repo'), 'manifest', '-r', '-o', snapshot_path], check=True)
 
-        # Start threading
-        threads = []
-        for _ in range(DEFAULT_THREAD_COUNT):
-            thread = threading.Thread(target=worker, args=(repo_queue, tag1, tag2, patch_output_path, tag_repos, generated_patches))
-            thread.start()
-            threads.append(thread)
+        zip_file.write(snapshot_path, os.path.join(repo_name, os.path.relpath(snapshot_path, output_subdir)))
+        print_formatted_text(HTML(f"<green>Success: Handled the repo warehouse {repo_name}.</green>"))
+        return True
+    except ET.ParseError as e:
+        print_formatted_text(HTML("<red>An error occurred while parsing the manifest file.</red>"))
+        return False
+    except Exception as e:
+        print_formatted_text(HTML("<red>An unexpected error occurred while handling the repo warehouse.</red>"))
+        return False
 
-        # Wait for all threads to finish
-        for thread in threads:
-            thread.join()
+def handle_git_warehouse(repo_name, repo_path, category, output_subdir, latest_tag, second_latest_tag, zip_file):
+    """
+    Handle operations for an independent git warehouse.
 
-        # Copy patches and zip them
-        copy_and_zip_patches(generated_patches, patch_output_path, repo_root_path)
+    Parameters:
+    repo_name (str): The name of the git warehouse.
+    repo_path (str): The file system path to the git warehouse.
+    category (str): The category of the git warehouse ('A' or 'B').
+    output_subdir (str): The subdirectory name for the output.
+    latest_tag (str): The latest tag name.
+    second_latest_tag (str): The second latest tag name.
 
-        # Generate snapshot manifest with repo
-        generate_snapshot_manifest_with_repo(REPO_TOOL_PATH, repo_root_path, patch_output_path)
+    Returns:
+    bool: True if the operation was successful, False otherwise.
+    """
+    try:
+        # Change to the git warehouse directory
+        os.chdir(repo_path)
 
-    console.log('Script execution completed for all repositories.')
+        if category == 'A':
+            # Generate patch files between the latest and penultimate tags
+            subprocess.run(['git', 'format-patch', f'{second_latest_tag}..{latest_tag}', '-o', output_subdir], check=True)
+            print_formatted_text(HTML(f"<green>Patches created for {repo_name}.</green>"))
 
-if __name__ == '__main__':
-    # Example usage: python script.py --manifest_path '/path/to/manifest.xml' --patch_output_path '/path/to/output' --tag1 'v1.0' --tag2 'v0.9'
+            # Copy all files from the specified source directory to the output directory
+            source_dir = os.path.join(repo_path, 'thyp-sdk/products/mt8678-mix/prebuilt-images/')
+            for root, dirs, files in os.walk(source_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(source_dir, repo_path)
+                    target_dir = os.path.join(output_subdir, relative_path)
+                    os.makedirs(target_dir, exist_ok=True)
+                    copy2(file_path, os.path.join(target_dir, file))
+                    zip_file.write(os.path.join(target_dir, file), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, file), output_subdir)))
+                    print_formatted_text(HTML(f"<green>Copied and compressed file: {file}</green>"))
+            copy2('/mnt/sso/one_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula-kernel.elf'))
+            zip_file.write(os.path.join(target_dir, 'nebula-kernel.elf'), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, 'nebula-kernel.elf'), output_subdir)))
+
+        elif category == 'B':
+            # For category B, only tagging is needed
+            print_formatted_text(HTML(f"<yellow>No patches to generate for {repo_name} (Category B).</yellow>"))
+
+        print_formatted_text(HTML(f"<green>Success: Handled the git warehouse {repo_name}.</green>"))
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print_formatted_text(HTML("<red>An error occurred while executing a subprocess command.</red>"))
+        return False
+    except Exception as e:
+        print_formatted_text(HTML("<red>An unexpected error occurred while handling the git warehouse.</red>"))
+        return False
+
+def copy_file_from_remote(output_dir):
+    """
+    Copy a file from a remote server to the local output directory.
+    """
+    try:
+        ssh = SSHClient()
+        ssh.set_missing_host_key_policy(AutoAddPolicy())
+        ssh.connect(REMOTE_SERVER, username=REMOTE_USER)
+
+        sftp = ssh.open_sftp()
+        remote_path = REMOTE_FILE_PATH.replace('\\', '/')
+        local_path = os.path.join(output_dir, LOCAL_FILE_NAME)
+
+        print_formatted_text(HTML(f"<blue>Attempting to copy file from {remote_path} to {local_path}</blue>"))
+
+        sftp.get(remote_path, local_path)
+        sftp.close()
+        ssh.close()
+        
+        print_formatted_text(HTML(f"<green>Successfully copied file from {REMOTE_SERVER} to {local_path}</green>"))
+
+        print_formatted_text(
+            HTML(f"<green>File {local_path} added to zip as {os.path.relpath(local_path, output_dir)}</green>"))
+
+        return local_path
+    except FileNotFoundError:
+        print_formatted_text(HTML(f"<red>File not found: {REMOTE_FILE_PATH}</red>"))
+        return None
+    except Exception as e:
+        print_formatted_text(HTML(f"<red>Failed to copy file from remote server: {str(e)}</red>"))
+        return None
+
+def main():
+    clear()
+    # Get the latest two tags from the Class A git repository
+    class_a_repo_path = os.path.join(CODE_ROOT_DIR, GIT_PATHS[CATEGORY_A_REPOS[0]])
+    latest_tag, second_latest_tag = get_latest_two_tags(class_a_repo_path)
+    if not latest_tag or not second_latest_tag:
+        print_formatted_text(HTML("<red>Error: Failed to retrieve tags.</red>"))
+        return
+
+    # Create the output directory
+    output_dir = create_output_dir(latest_tag)
+    if not output_dir:
+        return
+
+    # zip_output_dir = OUTPUT_DIR.format(latest_tag)
+    # os.makedirs(zip_output_dir, exist_ok=True)  # Ensure the directory for the zip file exists
+    zip_output_path = os.path.join(OUTPUT_DIR.format(latest_tag), 'MTK_release-spm.mt8678_2024_0524.zip')
+    # Process the repo and independent git repositories
+    with zipfile.ZipFile(zip_output_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        # 处理repo仓库
+        for repo_name, repo_rel_path in REPO_PATHS.items():
+            repo_path = os.path.join(CODE_ROOT_DIR, repo_rel_path)
+            output_subdir = os.path.join(output_dir, repo_name)
+            handle_repo_warehouse(repo_name, repo_path, output_subdir, latest_tag, second_latest_tag, zip_file)
+
+        # 处理git仓库
+        for repo_name, repo_rel_path in GIT_PATHS.items():
+            category = 'A' if repo_name in CATEGORY_A_REPOS else 'B'
+            repo_path = os.path.join(CODE_ROOT_DIR, repo_rel_path)
+            output_subdir = os.path.join(output_dir, repo_name)
+            handle_git_warehouse(repo_name, repo_path, category, output_subdir, latest_tag, second_latest_tag, zip_file)
+
+        # 复制远程文件并压缩
+        copied_file_path = copy_file_from_remote(output_dir)
+        if copied_file_path:
+            zip_file.write(copied_file_path, os.path.relpath(copied_file_path, output_dir))
+
+    print_formatted_text(HTML(f"<green>Zip archive created at: {zip_output_path}</green>"))
+
+if __name__ == "__main__":
     main()
-
-# End of code
