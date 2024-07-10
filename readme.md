@@ -1,6 +1,6 @@
 cd ~/grt/thyp-sdk && git clean -ffd && cd ~/grpower/workspace && rm -rf buildroot-pvt8675/ nebula-ree/ && cd ~/grpower/workspace/nebula && rm -rf out && cd ~/grpower/ && source scripts/genv.sh && cd ~/grpower/ && gr-nebula.py build && gr-nebula.py export-buildroot && gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images 
 cd ~/grt/thyp-sdk && git clean -ffd && ./build_all.sh
-scp products/mt8678-mix/out/gz.img Administrator@192.168.50.50:D:/78images
+scp products/mt8678-mix/out/gz.img Administrator@192.168.50.63:D:/78images
 # 下载源码
 git clone "ssh://gaoyx@gerrit.grt.sy:29418/grpower"
 cd ~/grpower/
@@ -24,8 +24,8 @@ gr-nebula.py export-buildroot
 gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images
 exit
 
-git tag release-spm.mt8678_2024_0624
-git push origin release-spm.mt8678_2024_0624
+git tag release-spm.mt8678_2024_0710
+git push origin release-spm.mt8678_2024_0710
 git push origin HEAD:refs/for/release-spm.mt8678_2024_0524
 
 cd ~/grt/thyp-sdk
@@ -38,19 +38,21 @@ cp -f vmm/out/nbl_vmm ../../yocto/prebuilt/hypervisor/grt/
 cp -f vmm/out/nbl_vm_ctl ../../yocto/prebuilt/hypervisor/grt/
 cp -f vmm/out/nbl_vm_srv ../../yocto/prebuilt/hypervisor/grt/
 cp -f vmm/out/libvmm.so ../../yocto/prebuilt/hypervisor/grt/
+cp -f ../libluajit.so ../../yocto/prebuilt/hypervisor/grt/
 cp -f products/mt8678-mix/guest-configs/uos_alps_pv8678.json ../../yocto/prebuilt/hypervisor/grt/
+cp -f ../uos_alps_pv8678.lua ../../yocto/prebuilt/hypervisor/grt/
 cp -f vmm/nbl_vm_srv/data/vm_srv_cfg_8678.pb.txt ../../yocto/prebuilt/hypervisor/grt/
 cp -f vmm/nbl_vmm/data/uos_mtk8678/uos_bootloader_lk2.pb.txt ../../yocto/prebuilt/hypervisor/grt/
 
 git push grt-mt8678 HEAD:refs/for/release-spm.mt8678_2024_0524%topic=nbl_trace_v1.0.2b
 git push grt-mt8678 HEAD:refs/for/main
 
-repo forall -c "git tag release-spm.mt8678_2024_0624"
-repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0624"
+repo forall -c "git tag release-spm.mt8678_2024_0710"
+repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0710"
 
 grep -r -n -w .patch --include=".gitignore"
 
-scp vmm/out/nbl_vmm vmm/out/nbl_vm_ctl vmm/out/nbl_vm_srv vmm/out/libvmm.so products/mt8678-mix/guest-configs/uos_alps_pv8678.json vmm/nbl_vmm/data/uos_mtk8678/uos_bootloader_lk2.pb.txt Administrator@192.168.50.50:D:/78images/auto8678p1_64_hyp_gpu_0614_fix_android
+scp vmm/out/nbl_vmm vmm/out/nbl_vm_ctl vmm/out/nbl_vm_srv vmm/out/libvmm.so products/mt8678-mix/guest-configs/uos_alps_pv8678.json vmm/nbl_vmm/data/uos_mtk8678/uos_bootloader_lk2.pb.txt Administrator@192.168.50.44:D:/78images/auto8678p1_64_hyp_gpu_0614_fix_android
 .\adb.exe push nbl_vmm ./usr/bin/
 .\adb.exe push nbl_vm_ctl ./usr/bin/
 .\adb.exe push nbl_vm_srv ./usr/bin/

@@ -1,23 +1,33 @@
-wget --output-document=/usr/local/bin/headscale \
-  "https://github.com/juanfont/headscale/releases/download/v0.23.0-alpha9/headscale_0.23.0-alpha9_linux_amd64"
+wget --output-document=/usr/bin/headscale "https://github.com/juanfont/headscale/releases/download/v0.23.0-alpha12/headscale_0.23.0-alpha12_linux_arm64"
+chmod 777 /usr/bin/headscale
 
 # 如果你是在自己的服务器上部署的，请将 <HEADSCALE_PUB_ENDPOINT> 换成你的 Headscale 公网 IP 或域名
-$ tailscale up --login-server=http://<HEADSCALE_PUB_ENDPOINT>:8080 --accept-routes=true --accept-dns=false
+tailscale up --login-server=http://112.30.116.152:27110 --accept-routes=true --accept-dns=false --advertise-routes=192.168.20.0/24 --reset --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33
+tailscale up --login-server=http://112.30.116.152:27110 --reset --accept-routes=true --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33
 
-tailscale up --login-server=http://112.30.116.152:27110 --accept-routes=true --accept-dns=false
+/etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp
 
-c9ed0cdfa7645a5ea25ab6efff56da1ad5c411f18e24ba0f
+service passwall start
+/usr/share/passwall/app.sh start
 
-tailscale up --login-server=http://112.30.116.152:27110 --accept-routes=true --accept-dns=false --advertise-routes=192.168.20.0/24 --reset --authkey c9ed0cdfa7645a5ea25ab6efff56da1ad5c411f18e24ba0f
-tailscale up --login-server=http://112.30.116.152:27110 --reset --authkey c9ed0cdfa7645a5ea25ab6efff56da1ad5c411f18e24ba0f
+sqlite3 db.sqlite "VACUUM;"
+headscale generate private-key > /etc/headscale/noise_private.key
+headscale generate private-key > /etc/headscale/derp_server_private.key
+chmod 600 /etc/headscale/noise_private.key
+chmod 600 /etc/headscale/derp_server_private.key
 
-headscale users create gaoyx
+headscale users destroy qwrt
+headscale users create qwrt
+headscale preauthkeys create --expiration "87600h" --user qwrt --reusable
 
-headscale preauthkeys create --user gaoyx --reusable
+headscale nodes delete -i 1
 
 netstat -tulnp | grep 3478
-
 kill -SIGKILL 6685
+nc -zv goldenconnect.cn 27110
+Test-NetConnection -ComputerName goldenconnect.cn -Port 27110
+
+scp -r gaoyx@192.168.50.45:/home/gaoyx/headscale/openwrt/* /etc/headscale/
 
 ### 推荐排序
 
@@ -106,3 +116,23 @@ reboot
 重启后，您可以再次检查服务状态，确认 `headscale` 是否按预期自动启动。
 
 通过这些步骤，您应该能够在 OpenWrt 系统上成功配置并管理 `headscale` 服务。如果遇到任何问题，可以根据错误信息进行调试或寻求帮助。
+
+
+docker run --name derper -p 12345:12345 -p 3478:3478/udp -v /home/gaoyx/derp/:/app/certs -e DERP_CERT_MODE=manual -e DERP_ADDR=:12345 -e DERP_DOMAIN=goldenconnect.cn -d ghcr.io/yangchuansheng/derper:latest
+
+apt update && apt upgrade
+apt install -y wget git openssl curl
+wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
+rm -rf /usr/local/go && tar -xf go1.22.4.linux-amd64.tar.gz
+export PATH=$PATH:/root/go/bin/
+echo "export PATH=$PATH:/root/go/bin/" >> /etc/profile
+source /etc/profile
+go env -w GO111MODULE=on
+~/go/pkg/mod/tailscale.com@v1.69.0-pre.0.20240629031731-8965e87fa857/cmd/derper/cert.go
+go build -o /etc/derp/derper
+openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout /etc/derp/derp.hefei.com.key -out /etc/derp/derp.hefei.com.crt -subj "/CN=derp.hefei.com" -addext "subjectAltName=DNS:derp.hefei.com"
+/etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp
+
+python3 -m http.server 12346
+
+tailscale ping --c 0 -size 1024 --until-direct=false desktop-f8etnlo

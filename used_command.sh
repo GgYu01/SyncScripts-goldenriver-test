@@ -137,8 +137,8 @@ rm -f .git/hooks
 tar -cf - yocto | 7z a -si -v1g -mmt=32 /mnt/hdo/78image/goldriver-code-base/yocto.7z
 7z x /mnt/hdo/78image/goldriver-code-base/yocto.7z.001 -so | tar -xvf - -C /mnt/sst/
 7z x -so yocto-release-spm.mt8678_2024_05_23_19.tar.7z | tar xf -
-tar cf - test/ | 7z a -si test.tar.7z -mmt=32
-7z x test.tar.7z -so | tar xf - -C destination_folder
+tar -cf - downloads | 7z a -si downloads.tar.7z -mmt=32
+7z x -so /path/to/downloads.tar.7z | tar -xf - -C /path/to/output
 
 sudo e4defrag /path/to/directory  # 对特定目录进行碎片整理
 sudo e4defrag /dev/sdXY  # 对整个分区进行碎片整理

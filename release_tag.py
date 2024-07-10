@@ -191,8 +191,20 @@ def handle_git_warehouse(repo_name, repo_path, category, output_subdir, latest_t
 
         if category == 'A':
             # Generate patch files between the latest and penultimate tags
-            subprocess.run(['git', 'format-patch', f'{second_latest_tag}..{latest_tag}', '-o', output_subdir], check=True)
-            print_formatted_text(HTML(f"<green>Patches created for {repo_name}.</green>"))
+            # subprocess.run(['git', 'format-patch', f'{second_latest_tag}..{latest_tag}', '-o', output_subdir], check=True)
+            # print_formatted_text(HTML(f"<green>Patches created for {repo_name}.</green>"))
+            patch_files = subprocess.check_output(['git', 'format-patch', f'{second_latest_tag}..{latest_tag}'], text=True)
+            patch_files_list = patch_files.splitlines()
+
+            # Create corresponding subdirectories in the output directory and copy patch files
+            for patch_file in patch_files_list:
+                patch_file_path = os.path.join(repo_path, patch_file)
+                relative_patch_path = os.path.relpath(patch_file_path, repo_path)
+                output_patch_path = os.path.join(output_subdir, relative_patch_path)
+                os.makedirs(os.path.dirname(output_patch_path), exist_ok=True)
+                copy2(patch_file_path, output_patch_path)
+                zip_file.write(output_patch_path, os.path.join(repo_name, os.path.relpath(output_patch_path, output_subdir)))
+                print_formatted_text(HTML(f"<green>Copied and compressed patch file: {patch_file}</green>"))
 
             # Copy all files from the specified source directory to the output directory
             source_dir = os.path.join(repo_path, 'thyp-sdk/products/mt8678-mix/prebuilt-images/')
@@ -205,8 +217,9 @@ def handle_git_warehouse(repo_name, repo_path, category, output_subdir, latest_t
                     copy2(file_path, os.path.join(target_dir, file))
                     zip_file.write(os.path.join(target_dir, file), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, file), output_subdir)))
                     print_formatted_text(HTML(f"<green>Copied and compressed file: {file}</green>"))
-            copy2('/mnt/sso/one_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula-kernel.elf'))
-            zip_file.write(os.path.join(target_dir, 'nebula-kernel.elf'), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, 'nebula-kernel.elf'), output_subdir)))
+            copy2('/mnt/sso/one_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula_kernel.elf'))
+            zip_file.write(os.path.join(target_dir, 'nebula_kernel.elf'), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, 'nebula_kernel.elf'), output_subdir)))
+            copy2('/home/nebula/grpower/workspace/nebula/snapshot.xml', os.path.join(target_dir, f'Nebula_MTK_{latest_tag}.xml'))
 
         elif category == 'B':
             # For category B, only tagging is needed
@@ -270,7 +283,7 @@ def main():
 
     # zip_output_dir = OUTPUT_DIR.format(latest_tag)
     # os.makedirs(zip_output_dir, exist_ok=True)  # Ensure the directory for the zip file exists
-    zip_output_path = os.path.join(OUTPUT_DIR.format(latest_tag), 'MTK_release-spm.mt8678_2024_0524.zip')
+    zip_output_path = os.path.join(OUTPUT_DIR.format(latest_tag), f'MTK_{latest_tag}.zip')
     # Process the repo and independent git repositories
     with zipfile.ZipFile(zip_output_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         # 处理repo仓库
