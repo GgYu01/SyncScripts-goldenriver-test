@@ -3,7 +3,7 @@ chmod 777 /usr/bin/headscale
 
 # 如果你是在自己的服务器上部署的，请将 <HEADSCALE_PUB_ENDPOINT> 换成你的 Headscale 公网 IP 或域名
 tailscale up --login-server=http://112.30.116.152:27110 --accept-routes=true --accept-dns=false --advertise-routes=192.168.20.0/24 --reset --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33
-tailscale up --login-server=http://112.30.116.152:27110 --reset --accept-routes=true --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33
+tailscale up --login-server=http://112.30.116.152:27110 --reset --accept-routes=true --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33 
 
 /etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp
 
@@ -127,12 +127,37 @@ rm -rf /usr/local/go && tar -xf go1.22.4.linux-amd64.tar.gz
 export PATH=$PATH:/root/go/bin/
 echo "export PATH=$PATH:/root/go/bin/" >> /etc/profile
 source /etc/profile
+go env -w GO11MODULE=on
+# 下载 Go 安装包
+wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
+
+# 移除旧的 Go 版本（如果有）
+rm -rf /usr/local/go
+
+# 解压并将 Go 移动到 /usr/local 目录
+tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
+
+# 将 Go 的 bin 目录添加到 PATH 环境变量
+echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile
+
+# 重新加载 /etc/profile 以使 PATH 变化生效
+source /etc/profile
+
+# 启用 Go Modules
 go env -w GO111MODULE=on
+
+go install tailscale.com/cmd/derper@main
 ~/go/pkg/mod/tailscale.com@v1.69.0-pre.0.20240629031731-8965e87fa857/cmd/derper/cert.go
+cd ~/go/pkg/mod/tailscale.com@v1.71.0-pre.0.20240722215050-990442185379/cmd/derper
 go build -o /etc/derp/derper
 openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout /etc/derp/derp.hefei.com.key -out /etc/derp/derp.hefei.com.crt -subj "/CN=derp.hefei.com" -addext "subjectAltName=DNS:derp.hefei.com"
 /etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp
 
 python3 -m http.server 12346
 
-tailscale ping --c 0 -size 1024 --until-direct=false desktop-f8etnlo
+sudo cp tailscale tailscaled /usr/sbin/
+sudo cp ./systemd/tailscaled.service /etc/systemd/system/
+sudo cp ./systemd/tailscaled.defaults /etc/default/tailscaled
+sudo systemctl daemon-reload
+sudo systemctl start tailscaled
+sudo systemctl enable tailscaled

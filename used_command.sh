@@ -27,7 +27,9 @@ watch -n 1 sudo cpupower monitor
 cat /proc/sys/vm/swappiness
 sudo sysctl vm.swappiness=100
 sudo gedit /etc/sysctl.conf
-sync && sync && echo 1 > /proc/sys/vm/drop_caches && echo 2 > /proc/sys/vm/drop_caches && echo 3 > /proc/sys/vm/drop_caches && sync
+sudo bash -c "sync && sync && echo 1 > /proc/sys/vm/drop_caches && echo 2 > /proc/sys/vm/drop_caches && echo 3 > /proc/sys/vm/drop_caches && sync "
+sudo bash -c "echo 1000 > /proc/sys/vm/vfs_cache_pressure && echo 4 > /proc/sys/vm/dirty_ratio && echo 2 > /proc/sys/vm/dirty_background_ratio"
+sudo bash -c "echo 500 > /proc/sys/vm/dirty_writeback_centisecs && echo 900 > /proc/sys/vm/dirtytime_expire_seconds && echo 1048576 > /proc/sys/vm/min_free_kbytes"
 
 7z a -t7z -v20g -mx=9 -m0=LZMA2 -mmt=32 MT8675_Hyper.7z MT8675_Hyper
 7z x yocto.7z.001 -r -o./output
@@ -36,9 +38,9 @@ sync && sync && echo 1 > /proc/sys/vm/drop_caches && echo 2 > /proc/sys/vm/drop_
 tar -zcvf
 
 # repo安装
-mkdir -p ~/bin
-curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-chmod a+x ~/bin/repo
+sudo chown 1000:1000 /usr/local/bin -R
+curl https://storage.googleapis.com/git-repo-downloads/repo > /usr/local/bin/repo
+chmod 777 /usr/local/bin/repo
 
 # thermal测试、定频
 CPU定频(Android)
@@ -108,19 +110,10 @@ adb push 4K-30fps.mp4 1080-60fps.mp4 敲鼓.avi l-mkv.mkv /mnt/runtime/default/e
 cd /mnt/hdo/MDesktop && adb root && adb remount && adb push stress /data && adb shell "chown 1000:1000 /data/stress" && adb install gfxbench_gl-4.0.0+corporate.armeabi-v7a.apk && adb shell
 cd /mnt/hdo/MDesktop && adb root && adb remount && adb push stress /data && adb shell "chown 1000:1000 /data/stress" && adb install /mnt/hdo/mtktestimage/gfxbench_gl-4.0.0+corporate.armeabi-v7a.apk && adb shell
 
-
 /data/stress --cpu 1
 
 /mnt/hdo/android_tools/SP_Flash_Tool_v6.2228_Linux/SPFlashToolV6 -c format-download -f /mnt/hdo/78image/auto8678p1_64_hyp_gpu/flash.xml
 cibot  密码 cibotpw
-
-
-# 分批push
-git log -1 --skip=990000
-git push grt-mt8678 019132ff3daf36c97a4006655dfd00ee42f2b590:refs/heads/master > /mnt/sst/test/yocto/log.log 2>&1
-repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b release-spm.mt8678_2024_0524 -m alps.xml && repo sync -j2048
-repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b release-spm.mt8678_2024_0524 -m yocto.xml && repo sync -j2048
-repo init -u <URL to Manifest repository> --reference=/path/to/local-mirror
 
 # 78 android 解压
 tar zxf ALPS-DEV-U0.MP1-LIBER.AUTO-OF.P52.PRE.1_AUTO8678P1_64_BSP_WIFI_KERNEL.tar.gz -C /mnt/sso/one_78/user_home/android
@@ -142,3 +135,42 @@ tar -cf - downloads | 7z a -si downloads.tar.7z -mmt=32
 
 sudo e4defrag /path/to/directory  # 对特定目录进行碎片整理
 sudo e4defrag /dev/sdXY  # 对整个分区进行碎片整理
+
+# 8678 audio测试
+tinymix 'ADDA_DL_CH1 DL0_CH1' 1
+tinymix 'ADDA_DL_CH2 DL0_CH2' 1
+tinymix 'DAC In Mux' 'Normal Path'
+tinymix 'HPL Mux' 'Audio Playback'
+tinymix 'HPR Mux' 'Audio Playback'
+tinymix 'Ext_Speaker_Amp Switch'  1
+tinyplay /data/test.wav -D 0 -d 0
+
+tinymix 'ADDA_DL_CH1 DL1_CH1' 1
+tinymix 'ADDA_DL_CH2 DL1_CH2' 1
+tinymix 'DAC In Mux' 'Normal Path'
+tinymix 'HPL Mux' 'Audio Playback'
+tinymix 'HPR Mux' 'Audio Playback'
+tinymix 'Ext_Speaker_Amp Switch'  1
+tinyplay /data/test.wav -D 0 -d 1
+
+tinymix 'ADDA_DL_CH1 DL2_CH1' 1
+tinymix 'ADDA_DL_CH2 DL2_CH2' 1
+tinymix 'DAC In Mux' 'Normal Path'
+tinymix 'HPL Mux' 'Audio Playback'
+tinymix 'HPR Mux' 'Audio Playback'
+tinymix 'Ext_Speaker_Amp Switch'  1
+tinyplay /data/test.wav -D 0 -d 2
+
+# 直到成功为止
+until docker compose up -d; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "Docker Compose started successfully."
+
+# 备份
+rsync -aH --numeric-ids --delete /path/to/source/ /path/to/backup/
+
+# 恢复
+rsync -aH --numeric-ids --delete /path/to/backup/ /path/to/source/
+
+# 高亮log
+tail -n 10 yocto/build/build.log alps/*.log | awk '
+/==>/ {print "\033[1;33m" $0 "\033[0m"; next}
+{print}'

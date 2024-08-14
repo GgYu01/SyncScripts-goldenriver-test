@@ -25,21 +25,21 @@ from prompt_toolkit.shortcuts import clear
 CODE_ROOT_DIR = "/mnt/"
 OUTPUT_DIR = "/mnt/hdo/78image/patch_release/MTK_{}"
 REPO_PATHS = {
-    'alps': './sst/one_78/alps',
-    'yocto': './sso/one_78/yocto'
+    'alps': './sst/san_78/alps',
+    'yocto': './sso/san_78/yocto'
 }
 GIT_PATHS = {
-    'grt': './sso/one_78/grt',
-    'zircon': './sso/one_78/grpower/workspace/nebula/zircon',
-    'garnet': './sso/one_78/grpower/workspace/nebula/garnet'
+    'grt': './sso/san_78/grt',
+    'zircon': './sso/san_78/grpower/workspace/nebula/zircon',
+    'garnet': './sso/san_78/grpower/workspace/nebula/garnet'
 }
 CATEGORY_A_REPOS = ['grt']
 CATEGORY_B_REPOS = ['zircon', 'garnet']
 NUM_PROCESSES = 64
-REMOTE_SERVER = '192.168.50.50'
+REMOTE_SERVER = '100.64.0.3'
 REMOTE_USER = 'Administrator'
-REMOTE_FILE_PATH = 'C:/Users/Administrator/Downloads/MT8678 Hypervisor Release Note.pdf'
-LOCAL_FILE_NAME = 'MT8678_Hypervisor_Release_Note.pdf'
+REMOTE_FILE_PATH = 'C:/Users/Administrator/Downloads/MT8678-8676_Hypervisor_Release_Note.xlsx'
+LOCAL_FILE_NAME = 'MT8678-8676_Hypervisor_Release_Note.xlsx'
 
 # Function to get the latest two tags from a git repository
 def get_latest_two_tags(repo_path):
@@ -127,7 +127,7 @@ def handle_repo_warehouse(repo_name, repo_path, output_subdir, latest_tag, secon
         os.chdir(repo_path)
 
         # Read the manifest file to get all git repository paths
-        manifest_path = os.path.join('.repo', 'manifests', f'{repo_name}.xml')
+        manifest_path = os.path.join('.repo', 'manifests', f'mt8678/grt/0628/{repo_name}.xml')
         tree = ET.parse(manifest_path)
         root = tree.getroot()
 
@@ -216,10 +216,12 @@ def handle_git_warehouse(repo_name, repo_path, category, output_subdir, latest_t
                     os.makedirs(target_dir, exist_ok=True)
                     copy2(file_path, os.path.join(target_dir, file))
                     zip_file.write(os.path.join(target_dir, file), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, file), output_subdir)))
-                    print_formatted_text(HTML(f"<green>Copied and compressed file: {file}</green>"))
-            copy2('/mnt/sso/one_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula_kernel.elf'))
-            zip_file.write(os.path.join(target_dir, 'nebula_kernel.elf'), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, 'nebula_kernel.elf'), output_subdir)))
-            copy2('/home/nebula/grpower/workspace/nebula/snapshot.xml', os.path.join(target_dir, f'Nebula_MTK_{latest_tag}.xml'))
+                    print_formatted_text(HTML(f"<green>Copied and compressed file: {file} </green>"))
+            copy2('/mnt/sso/san_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula_kernel.elf'))
+            print_formatted_text(HTML(f"<green>Copied and compressed file: nebula_kernel.elf </green>"))
+            zip_file.write(os.path.join(target_dir, 'nebula_kernel.elf'), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, 'nebula_kernel.elf'), output_subdir)))            
+            copy2('/mnt/sso/san_78/grpower/workspace/nebula/snapshot.xml', os.path.join(target_dir, f'Nebula_MTK_{latest_tag}.xml'))
+            print_formatted_text(HTML(f"<green>Copied and compressed file: snapshot.xml </green>"))
 
         elif category == 'B':
             # For category B, only tagging is needed
@@ -267,19 +269,55 @@ def copy_file_from_remote(output_dir):
         print_formatted_text(HTML(f"<red>Failed to copy file from remote server: {str(e)}</red>"))
         return None
 
+def cleanup_zip_contents(zip_path):
+    """
+    Remove specific files and directories from the zip file.
+    
+    Parameters:
+    zip_path (str): The file path to the zip archive.
+    """
+    with zipfile.ZipFile(zip_path, 'r') as zfile:
+        # Collect all items that should be deleted
+        delete_items = []
+        for item in zfile.namelist():
+            path = Path(item)
+            if "Update-nebula-prebuilt-binary.patch" in path.name and path.parent.match("*/grt*"):
+                delete_items.append(item)
+
+        # Check and collect directories to potentially delete
+        delete_dirs = []
+        for directory in {Path(item).parent for item in delete_items}:
+            while directory != Path(''):
+                directory_contents = [item for item in zfile.namelist() if item.startswith(str(directory))]
+                if len(directory_contents) == len([item for item in delete_items if item.startswith(str(directory))]):
+                    delete_dirs.append(str(directory))
+                directory = directory.parent
+
+        # Remove the collected items
+        with zipfile.ZipFile(zip_path + ".tmp", 'w') as new_zfile:
+            for item in zfile.namelist():
+                if item not in delete_items and item not in delete_dirs:
+                    new_zfile.writestr(item, zfile.read(item))
+
+    # Replace the old file with the new one
+    os.replace(zip_path + ".tmp", zip_path)
+    print_formatted_text(HTML("<green>Cleanup completed: Removed specific files and directories.</green>"))
+
 def main():
     clear()
     # Get the latest two tags from the Class A git repository
     class_a_repo_path = os.path.join(CODE_ROOT_DIR, GIT_PATHS[CATEGORY_A_REPOS[0]])
     latest_tag, second_latest_tag = get_latest_two_tags(class_a_repo_path)
+    # latest_tag='release-spm.mt8678_2024_0802'
+    # second_latest_tag='mt8678-mtk-0726'
     if not latest_tag or not second_latest_tag:
         print_formatted_text(HTML("<red>Error: Failed to retrieve tags.</red>"))
         return
-
     # Create the output directory
     output_dir = create_output_dir(latest_tag)
     if not output_dir:
         return
+    # output_dir = '/mnt/hdo/78image/patch_release/MTK_release-spm.mt8678_2024_0802'
 
     # zip_output_dir = OUTPUT_DIR.format(latest_tag)
     # os.makedirs(zip_output_dir, exist_ok=True)  # Ensure the directory for the zip file exists
@@ -304,7 +342,10 @@ def main():
         if copied_file_path:
             zip_file.write(copied_file_path, os.path.relpath(copied_file_path, output_dir))
 
-    print_formatted_text(HTML(f"<green>Zip archive created at: {zip_output_path}</green>"))
+    # New code to cleanup the zip file
+    # cleanup_zip_contents(zip_output_path)
+
+    print_formatted_text(HTML(f"<green>Zip archive created and cleaned up at: {zip_output_path}</green>"))
 
 if __name__ == "__main__":
     main()
