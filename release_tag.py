@@ -25,13 +25,13 @@ from prompt_toolkit.shortcuts import clear
 CODE_ROOT_DIR = "/mnt/"
 OUTPUT_DIR = "/mnt/hdo/78image/patch_release/MTK_{}"
 REPO_PATHS = {
-    'alps': './sst/san_78/alps',
-    'yocto': './sso/san_78/yocto'
+    'alps': './sst/four_78/alps',
+    'yocto': './sso/four_78/yocto'
 }
 GIT_PATHS = {
-    'grt': './sso/san_78/grt',
-    'zircon': './sso/san_78/grpower/workspace/nebula/zircon',
-    'garnet': './sso/san_78/grpower/workspace/nebula/garnet'
+    'grt': './sso/four_78/grt',
+    'zircon': './sso/four_78/grpower/workspace/nebula/zircon',
+    'garnet': './sso/four_78/grpower/workspace/nebula/garnet'
 }
 CATEGORY_A_REPOS = ['grt']
 CATEGORY_B_REPOS = ['zircon', 'garnet']
@@ -217,10 +217,10 @@ def handle_git_warehouse(repo_name, repo_path, category, output_subdir, latest_t
                     copy2(file_path, os.path.join(target_dir, file))
                     zip_file.write(os.path.join(target_dir, file), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, file), output_subdir)))
                     print_formatted_text(HTML(f"<green>Copied and compressed file: {file} </green>"))
-            copy2('/mnt/sso/san_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula_kernel.elf'))
+            copy2('/mnt/sso/four_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula_kernel.elf'))
             print_formatted_text(HTML(f"<green>Copied and compressed file: nebula_kernel.elf </green>"))
             zip_file.write(os.path.join(target_dir, 'nebula_kernel.elf'), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, 'nebula_kernel.elf'), output_subdir)))            
-            copy2('/mnt/sso/san_78/grpower/workspace/nebula/snapshot.xml', os.path.join(target_dir, f'Nebula_MTK_{latest_tag}.xml'))
+            copy2('/mnt/sso/four_78/grpower/workspace/nebula/snapshot.xml', os.path.join(target_dir, f'Nebula_MTK_{latest_tag}.xml'))
             print_formatted_text(HTML(f"<green>Copied and compressed file: snapshot.xml </green>"))
 
         elif category == 'B':

@@ -18,10 +18,10 @@ gr-nebula.py export-buildroot
 gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images
 exit
 
-cd ~/grpower/workspace/nebula && rm snapshot.xml && source scripts/env.sh && jiri runp 'git tag release-spm.mt8678_mt8676_2024_0813' && jiri runp 'git push origin release-spm.mt8678_mt8676_2024_0813 ' && jiri snapshot snapshot.xml
+cd ~/grpower/workspace/nebula && rm snapshot.xml && source scripts/env.sh && jiri runp 'git tag release-spm.mt8678_mt8676_2024_0814' && jiri runp 'git push origin release-spm.mt8678_mt8676_2024_0814 ' && jiri snapshot snapshot.xml
 
-git tag release-spm.mt8678_2024_0813
-git push origin release-spm.mt8678_2024_0813
+git tag release-spm.mt8678_2024_0814
+git push origin release-spm.mt8678_2024_0814
 git push origin :refs/tags/<tagname>
 git push origin HEAD:refs/for/release-spm.mt8678_2024_0726
 
@@ -54,8 +54,8 @@ cp -f ../../grt_be/workspace/out/video_server ../../yocto/prebuilt/hypervisor/gr
 git push grt-mt8678 HEAD:refs/for/release-spm.mt8678_2024_0726%topic=lua_dynamic_dram_size
 git push grt-mt8678 HEAD:refs/for/main
 
-repo forall -c "git tag release-spm.mt8678_2024_0813"
-repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0813"
+repo forall -c "git tag release-spm.mt8678_2024_0814"
+repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0814"
 
 grep -r -n -w .patch --include=".gitignore"
 
