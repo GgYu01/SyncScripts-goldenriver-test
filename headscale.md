@@ -127,7 +127,7 @@ rm -rf /usr/local/go && tar -xf go1.22.4.linux-amd64.tar.gz
 export PATH=$PATH:/root/go/bin/
 echo "export PATH=$PATH:/root/go/bin/" >> /etc/profile
 source /etc/profile
-go env -w GO11MODULE=on
+go env -w GO111MODULE=on
 # 下载 Go 安装包
 wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
 
@@ -146,12 +146,20 @@ source /etc/profile
 # 启用 Go Modules
 go env -w GO111MODULE=on
 
-go install tailscale.com/cmd/derper@main
+
+
+# 注释 func (m *manualCertManager) getCertificate(hi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+        // if hi.ServerName != m.hostname {
+                // return nil, fmt.Errorf("cert mismatch with hostname: %q", hi.ServerName)
+        // }
+# 这三行
+
+until go install tailscale.com/cmd/derper@main ; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "Download Source Code Successfully."
 ~/go/pkg/mod/tailscale.com@v1.69.0-pre.0.20240629031731-8965e87fa857/cmd/derper/cert.go
 cd ~/go/pkg/mod/tailscale.com@v1.71.0-pre.0.20240722215050-990442185379/cmd/derper
 go build -o /etc/derp/derper
 openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout /etc/derp/derp.hefei.com.key -out /etc/derp/derp.hefei.com.crt -subj "/CN=derp.hefei.com" -addext "subjectAltName=DNS:derp.hefei.com"
-/etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp
+nohup /etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp &
 
 python3 -m http.server 12346
 

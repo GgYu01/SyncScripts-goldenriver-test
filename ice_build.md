@@ -84,7 +84,7 @@
 
 strace -f -e execve -o strace.log make -jN
 strace -f -e execve -s 5000 -o strace_output.log bash -c "while true; do sleep 1; done" &
-sudo strace -f -e execve -o /tmp/full_compile_trace.log bash -c 'make -jN'
+sudo strace -f -e execve -o /tmp/full_compile_trace.log bash s-c 'make -jN'
 sudo strace -f -e execve -s 1000 -o /tmp/full_compile_trace.log bash -c 'make krn_images -j36'
 
 inotifywait -m -r /usr/bin /usr/local/bin /path/to/compilers \
@@ -96,3 +96,123 @@ export PROMPT_COMMAND='history 1 >> /tmp/command_history.log'
 grep -E 'gcc|clang|arm|aarch64' /tmp/compile_commands.log
 
 icecc --build-native --clang /path/to/clang
+
+
+
+
+您提出了一个非常好的观点。我为之前的解释不够清晰道歉。您是对的，我之前的解决方案确实没有很好地解决如何捕获AOSP编译过程中使用的多个预置交叉编译链的问题。让我重新思考这个问题，并提供一个更适合您情况的解决方案。
+
+为了解决这个问题，我们需要一个更复杂的方法来拦截和分析AOSP编译过程中使用的所有编译器调用。以下是一个更合适的方案：
+
+
+
+```python
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+import json
+import hashlib
+
+ICECREAM_CONFIG_FILE = "/path/to/icecream_config.json"
+COMPILER_WRAPPER = "/path/to/compiler_wrapper.py"
+
+def setup_environment():
+    # 设置环境变量，将所有编译器调用重定向到我们的包装器
+    os.environ["PATH"] = f"{os.path.dirname(COMPILER_WRAPPER)}:{os.environ['PATH']}"
+    os.environ["COMPILER_WRAPPER"] = COMPILER_WRAPPER
+
+def update_icecream_config(compilers):
+    config = {"compilers": compilers}
+    with open(ICECREAM_CONFIG_FILE, "w") as f:
+        json.dump(config, f)
+
+def main():
+    setup_environment()
+
+    # 运行原始的make命令
+    process = subprocess.Popen(sys.argv[1:], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    compilers = {}
+    for line in iter(process.stderr.readline, b''):
+        line = line.decode().strip()
+        if line.startswith("COMPILER_INFO:"):
+            compiler_path, compiler_hash = line.split(":")[1:]
+            compilers[compiler_path] = compiler_hash
+
+    # 更新ICE-CREAM配置
+    update_icecream_config(compilers)
+
+    # 等待make命令完成
+    process.wait()
+
+if __name__ == "__main__":
+    main()
+
+```
+
+```python
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+import hashlib
+
+def hash_file(filename):
+    with open(filename, "rb") as f:
+        return hashlib.md5(f.read()).hexdigest()
+
+def main():
+    original_compiler = sys.argv[0]
+    compiler_hash = hash_file(original_compiler)
+
+    # 输出编译器信息到stderr
+    print(f"COMPILER_INFO:{original_compiler}:{compiler_hash}", file=sys.stderr)
+
+    # 调用原始编译器
+    os.execv(original_compiler, sys.argv)
+
+if __name__ == "__main__":
+    main()
+
+```
+
+这个解决方案的工作原理如下：
+
+1. **主包装脚本 (aosp-icecream-wrapper.py)**:
+   - 设置环境变量，将PATH中的编译器调用重定向到我们的编译器包装脚本。
+   - 运行原始的make命令。
+   - 捕获stderr输出，从中提取编译器信息。
+   - 更新ICE-CREAM配置文件，包含所有使用的编译器信息。
+
+2. **编译器包装脚本 (compiler_wrapper.py)**:
+   - 为每个编译器调用计算哈希值。
+   - 将编译器信息输出到stderr。
+   - 调用原始编译器。
+
+使用方法：
+
+1. 将这两个脚本放在您的构建环境中。
+
+2. 修改`ICECREAM_CONFIG_FILE`和`COMPILER_WRAPPER`的路径以匹配您的环境。
+
+3. 使用主包装脚本来运行您的编译命令：
+
+   ```
+   python3 /path/to/aosp-icecream-wrapper.py make -j8
+   ```
+
+这个解决方案的优点：
+
+- 不需要修改AOSP的编译脚本。
+- 可以捕获所有使用的交叉编译链，包括prebuilts中的不同版本。
+- 动态更新ICE-CREAM配置，以适应不同的编译器使用。
+
+需要注意的是：
+
+- 这个方法可能会slightly增加编译时间，因为它为每个编译器调用添加了一个额外的步骤。
+- 您需要确保ICE-CREAM配置为使用这个动态生成的配置文件。
+
+如果您需要进一步的调整或有任何疑问，请告诉我。我们可以根据您的具体环境和需求来优化这个解决方案。

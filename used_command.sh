@@ -161,6 +161,29 @@ tinymix 'HPR Mux' 'Audio Playback'
 tinymix 'Ext_Speaker_Amp Switch'  1
 tinyplay /data/test.wav -D 0 -d 2
 
+amixer cset name='ADDA_DL_CH1 DL1_CH1' 1  
+amixer cset name='ADDA_DL_CH2 DL1_CH2' 1
+amixer cset name='DAC In Mux' 'Normal Path'
+amixer cset name='HPL Mux' 'Audio Playback'
+amixer cset name='HPR Mux' 'Audio Playback'
+
+amixer cset name='ADDA_DL_CH1 DL2_CH1' 1
+amixer cset name='ADDA_DL_CH2 DL2_CH2' 1
+aplay -Dhw:0,1 /data/test.wav 
+aplay -Dhw:0,2 /data/test.wav
+
+amixer cset name='HW_GAIN1_IN_CH2 DL24_CH2' 1
+amixer cset name='ADDA_DL_CH1 HW_GAIN1_OUT_CH1' 1
+amixer cset name='ADDA_DL_CH2 HW_GAIN1_OUT_CH2' 1
+amixer cset name='DAC In Mux' 'Normal Path'
+amixer cset name='HPL Mux' 'Audio Playback'
+amixer cset name='HPR Mux' 'Audio Playback'
+amixer cset name='Ext_Speaker_Amp Switch' 1
+aplay -Dhw:0,10 -r48000 -c2 -fS16_LE /data/test.wav
+
+
+
+
 # 直到成功为止
 until docker compose up -d; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "Docker Compose started successfully."
 

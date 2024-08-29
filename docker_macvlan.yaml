@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  one_home:
+    build:
+      context: /mnt/hdo/one_78/build
+      args:
+        username: ${MY_NAME}
+        password: ${MY_PWD}
+        timezone: ${MY_TIMEZONE}
+    image: goldenriver/thyp-sdk:${MY_IMAGE_VERSION}
+    volumes:
+      - "/mnt/hdo/one_78/user_home:/home/${MY_NAME}"
+      - "/mnt/hdo/one_78/alps:/home/${MY_NAME}/alps"
+      - "/mnt/hdo/one_78/yocto:/home/${MY_NAME}/yocto"
+      - "/mnt/hdo/one_78/grpower:/home/${MY_NAME}/grpower"
+      - "/mnt/hdo/one_78/grt:/home/${MY_NAME}/grt"
+      - "/mnt/hdo/one_78/grt_be:/home/${MY_NAME}/grt_be"
+      - "/home/gaoyx/.ssh:/home/nebula/.ssh"
+      - "/home/gaoyx/id_ed25519:/home/nebula/id_ed25519"
+      - "/home/gaoyx/id_ed25519.pub:/home/nebula/id_ed25519.pub"
+      - "/home/gaoyx/.gitconfig:/home/nebula/.gitconfig"
+    networks:
+      macvlan_network:
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    command: >
+      sh -c "
+        ip link set eth0 up &&
+        dhclient -v eth0 &&
+        /usr/sbin/sshd -D
+      "
+
+networks:
+  macvlan_network:
+    driver: macvlan
+    driver_opts:
+      parent: eth0  # 替换为您的实际网络接口名称

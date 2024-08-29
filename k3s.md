@@ -106,3 +106,21 @@ kubectl get nodes
 ctr -n k8s.io images tag docker.io/goldenriver/thyp-sdk-0.4:latest 100.64.0.11:5001/goldenriver/thyp-sdk-0.4:latest
 ctr -n k8s.io images push 100.64.0.11:5001/goldenriver/thyp-sdk-0.4:latest
 docker exec -it k3s-server-bridge ctr -n k8s.io images push --plain-http 100.64.0.11:5001/goldenriver/thyp-sdk-0.4:latest
+
+curl -sfL https://get.k3s.io | K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa807b3e6cd49a13a13e56ec45c248755::server:db452fe505b2cbf87d48c37c492df7c8" K3S_URL="https://100.64.0.11:6443" INSTALL_K3S_SYMLINK=force sh -s - server \
+  --server https://100.64.0.11:6443 \
+  --datastore-endpoint="http://100.64.0.11:2379" \
+  --v=4 \
+  --log ~/k3s/k3s-server.log
+
+sudo journalctl -u k3s -n 30 --no-pager
+tail ~/k3s/k3s-server.log -n 20
+
+curl -sfL https://get.k3s.io | K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa807b3e6cd49a13a13e56ec45c248755::server:db452fe505b2cbf87d48c37c492df7c8" K3S_URL="https://100.64.0.11:6443" INSTALL_K3S_SYMLINK=force sh -s - agent \
+  --server https://100.64.0.11:6443 \
+  --v=4 \
+  --log ~/k3s/k3s-agent.log
+
+sudo docker save goldenriver/thyp-sdk:focal-0.4 -o thyp-sdk-focal-0.4.tar
+sudo ctr -n=k8s.io images import thyp-sdk-focal-0.4.tar
+sudo ctr -n=k8s.io images ls

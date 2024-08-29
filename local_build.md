@@ -244,3 +244,25 @@ class NebulaCompileTask(CompileTask):
 ### **总结**
 
 这种方法避免了将所有命令合并成一个大字符串的做法，而是逐步执行每个命令并且保留 Bash 环境的上下文。这使得你可以利用 Python 的强大特性来检测每一步的成功与否，同时也保持了对 Bash 环境的控制。希望这种方式更符合你的期望。如果还有其他问题或需要进一步优化，请随时告诉我。
+
+
+
+
+我想使用并发任务优化脚本编译的速度，请帮我梳理编译时的逻辑和可并行执行的任务。
+我有多个代码仓库，分别是： nebula 、 grt、 yocto 、alps。
+其中nebula使用不同命令编译编译后有两种产物，一种是HEE 一种是 TEE。
+HEE 编译的二进制会导出到grt某个路径中，在grt整编时打包，grt整编包括grt仓库自身的源码。被打包的HEE Image是一个独立的镜像，可以直接验证。
+TEE 编译的二进制会导出到 alps的某个路径中，在alps中使用某一个命令打包。或者可以使用alps全编时也会被一起打包。被打包的TEE镜像是一个独立的镜像，可以直接验证。
+grt导出的二进制只能使用yocto镜像验证，并不独立。
+所有编译开始前都要git reset --hard、 git clean -fd对应仓库并且删除编译缓存文件夹。
+实际刷机过程中，为了验证不同仓库的代码更新后，嵌入式刷机镜像可以通过单刷部分模块的镜像以达到验证的目的。
+比如：如果更新nebula HEE 代码，因为nebula HEE的编译产物必须导出到grt中编译生成镜像，所以nebula更新需要编译nebula和grt。然后编译前考虑到不能先编译nebula导出到grt后再清理grt仓库并编译，这样改动会失效，所以需要在编译开始时就清理nebula和grt仓库。
+grt自己的编译产物，不包括nebula HEE改动，必须导出到yocto中重新编译yocto打包才可以验证。所以如果只更改grt，需要提前清理yocto和grt这两个仓库，其他的不需要。
+yocto修改时只需要清理并编译yocto。
+如果grt的非nebula部分、nebula HEE同时修改则可以开始前清理yocto+grt+nebula。同理，如果nebula HEE + grt + Yocto同时修改则依然需要提前清理yocto+grt+nebula
+alps修改时只需要清理后编译alps。
+nebula TEE如果有改动，则需要清理alps的某个目录，然后清理nebula的仓库，编译nebula TEE代码后，导出到alps中，单编一个模块。若alps和nebula TEE同时有改动，则可以清理alps全部目录和nebula仓库后，编译 nebula TEE 导出 alps后，直接整编alps。
+当nebula HEE 和 nebula TEE都有改动时，需要先编译HEE后，执行nebula清理，再编译TEE，这是因为同源码但是编译命令不同。
+请帮我总结出一共有几种情况，如果编写Python3.8脚本如何最大程度尽量并发执行尽可能多的任务。
+
+我觉得你把任务分为每个仓库的清理和编译是十分合理的，但是你的脚本不方便模块化，最好可以通过设定脚本中的变量，让脚本去判断本次改动涉及影响的模块，哪些要提前清理然后编译哪些模块。

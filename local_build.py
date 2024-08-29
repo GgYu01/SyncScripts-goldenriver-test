@@ -110,6 +110,15 @@ class NebulaCompileTask(CompileTask):
     Compile task for Nebula module.
     Handles the entire compilation process with detailed logging.
     """
+    def __init__(self, name: str = "Nebula"):
+        """
+        Initialize the Nebula compile task with a specific name.
+
+        Parameters:
+            name (str): The name of the compile task.
+        """
+        super().__init__(name=name)
+
     def execute_steps(self) -> None:
         """
         Execute all steps for the Nebula compile task.
@@ -155,6 +164,15 @@ class HeeExportTask(CompileTask):
     Compile task for Hee module.
     Handles the export of Hee images.
     """
+    def __init__(self, name: str = "HeeExport"):
+        """
+        Initialize the Nebula compile task with a specific name.
+
+        Parameters:
+            name (str): The name of the compile task.
+        """
+        super().__init__(name=name)
+
     def execute_steps(self) -> None:
         """
         Execute all steps for the Hee export task.
@@ -173,6 +191,15 @@ class SDKCompileTask(CompileTask):
     Compile task for SDK module.
     Handles the configuration, building, and packaging of SDK and Hee images.
     """
+    def __init__(self, name: str = "SDKCompile"):
+        """
+        Initialize the Nebula compile task with a specific name.
+
+        Parameters:
+            name (str): The name of the compile task.
+        """
+        super().__init__(name=name)
+
     def execute_steps(self) -> None:
         """
         Execute all steps for the SDK compile task.
@@ -195,6 +222,15 @@ class SdkHeeExportTask(CompileTask):
     Task for exporting SDK and Hee images.
     Handles copying multiple files to the specified directories.
     """
+    def __init__(self, name: str = "SdkHeeExport"):
+        """
+        Initialize the Nebula compile task with a specific name.
+
+        Parameters:
+            name (str): The name of the compile task.
+        """
+        super().__init__(name=name)
+
     def execute_steps(self) -> None:
         """
         Execute all steps for exporting SDK and Hee images.
@@ -231,6 +267,15 @@ class TeeExportTask(CompileTask):
     Compile task for Tee module.
     Handles the export and packaging of Tee images.
     """
+    def __init__(self, name: str = "TeeExport"):
+        """
+        Initialize the Nebula compile task with a specific name.
+
+        Parameters:
+            name (str): The name of the compile task.
+        """
+        super().__init__(name=name)
+
     def execute_steps(self) -> None:
         """
         Execute all steps for the Tee export and packaging task.
@@ -278,6 +323,15 @@ class GrtBeCompileTask(CompileTask):
     Compile task for Grt_be module.
     Handles the cleaning, building, and exporting of Grt_be.
     """
+    def __init__(self, name: str = "GrtBe"):
+        """
+        Initialize the Nebula compile task with a specific name.
+
+        Parameters:
+            name (str): The name of the compile task.
+        """
+        super().__init__(name=name)
+
     def execute_steps(self) -> None:
         """
         Execute all steps for the Grt_be compile task.
@@ -306,7 +360,7 @@ class AndroidCompileTask(CompileTask):
     Handles the cleaning, compilation, and packaging of Android components.
     """
     def __init__(self):
-        super().__init__(name="Android Compile")
+        super().__init__(name="Android")
 
     def execute_steps(self) -> None:
         """
@@ -375,6 +429,15 @@ class YoctoCompileTask(CompileTask):
     Compile task for Yocto module.
     Handles the cleaning, resetting, and compiling of Yocto, and exporting the images.
     """
+    def __init__(self, name: str = "Yocto"):
+        """
+        Initialize the Nebula compile task with a specific name.
+
+        Parameters:
+            name (str): The name of the compile task.
+        """
+        super().__init__(name=name)
+
     def execute_steps(self) -> None:
         """
         Execute all steps for the Yocto compile task, including cleaning, resetting, and compiling.
@@ -426,7 +489,7 @@ class ImageExportToHostTask(CompileTask):
         Parameters:
             max_workers (int): The maximum number of concurrent SCP transfers.
         """
-        super().__init__(name="Image Export to Host")
+        super().__init__(name="Image_Export_to_Host")
         self.max_workers = max_workers
 
     def execute_steps(self) -> None:

@@ -13,12 +13,12 @@ import subprocess
 # Configuration Manager with detailed comments and type annotations
 class ConfigurationManager:
     DEFAULTS = {
-        'source': '/mnt/hdo/san_78/user_home/78images/auto8678p1_64_hyp/',
-        'destination': 'D:/78images/yocto/test',
+        'source': '/mnt/sso/san_78/yocto/downloads/',
+        'destination': 'D:/downloads',
         'ip': '100.64.0.3',  # Assuming this is the Windows IP you need to transfer files to
         'username': 'Administrator',  # Assuming this is the Windows username
         'include_source_dir': False,  # Default to not including the source directory itself
-        'concurrency': 2
+        'concurrency': 16
     }
     
     def __init__(self, args: list):
