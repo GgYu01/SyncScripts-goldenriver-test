@@ -108,68 +108,6 @@ curl -I https://www.google.com
 
 如果 Shadowsocks 客户端工作正常，并且终端代理配置正确，网络请求应当可以顺利地通过代理，从而避免网络不通或超时的问题。
 
-要在 Linux 终端中解析 Shadowsocks (SS) 的订阅链接并使用其中的服务器进行代理配置，你可以通过以下方法进行操作。下面介绍如何使用 `subconverter` 工具将订阅链接转换为 Shadowsocks 配置文件，并使用 `ss-local` 启动代理。
-
-### 1. **安装 `subconverter`**
-`subconverter` 是一个开源工具，可以将订阅链接转换为 Shadowsocks 或 V2Ray 的配置文件。你可以直接在 Linux 上运行它。
-
-#### **步骤：**
-1. **克隆 `subconverter` 仓库：**
-   ```bash
-   git clone https://github.com/tindy2013/subconverter.git
-   cd subconverter
-   ```
-
-2. **编译或下载 `subconverter` 的可执行文件：**
-   你可以下载已经编译好的版本，或者自行编译：
-   ```bash
-   # 下载已经编译好的版本
-   wget https://github.com/tindy2013/subconverter/releases/download/v0.7.2/subconverter_linux64.tar.gz
-   tar -zxvf subconverter_linux64.tar.gz
-   ```
-
-### 2. **使用 `subconverter` 解析订阅链接**
-使用 `subconverter` 将订阅链接转换为 Shadowsocks 的配置文件：
-
-```bash
-./subconverter -p -d https://n5c27.no-mad-world.club/link/NfRPyEGviw3DoYWl?sub=2&extend=1
-```
-
-这会生成一个 Shadowsocks 的配置文件，你可以将其保存为 `shadowsocks.json`。
-
-### 3. **配置和启动 Shadowsocks**
-使用生成的 `shadowsocks.json` 文件启动 `ss-local` 代理：
-
-```bash
-ss-local -c /path/to/shadowsocks.json
-```
-
-这将启动一个本地代理，默认监听 `127.0.0.1:1080`。
-
-### 4. **配置系统代理**
-将终端的 `http_proxy` 和 `https_proxy` 设置为 Shadowsocks 代理：
-
-```bash
-export http_proxy="http://127.0.0.1:1080"
-export https_proxy="http://127.0.0.1:1080"
-```
-
-### 5. **验证代理设置**
-你可以使用 `curl` 测试代理是否生效：
-
-```bash
-curl -I https://www.google.com
-```
-
-如果返回成功响应，则说明代理配置成功，你可以通过 Shadowsocks 代理进行下载和编译。
-
-### **总结：**
-1. 使用 `subconverter` 将订阅链接转换为 Shadowsocks 配置文件。
-2. 使用 `ss-local` 启动 Shadowsocks 代理。
-3. 设置终端代理环境变量，确保下载和编译过程通过代理进行。
-
-这样，你就能够在 Linux 终端中使用 Shadowsocks 订阅链接所提供的代理进行网络操作了。
-
 为了在终端中使用 Shadowsocks 代理并支持所有网络协议（不仅限于 HTTP 和 HTTPS），你可以通过 `proxychains` 工具将所有网络流量都通过 Shadowsocks 代理。以下是具体的步骤：
 
 ### 1. **安装 `proxychains`**

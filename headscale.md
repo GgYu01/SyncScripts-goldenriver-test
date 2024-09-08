@@ -23,7 +23,6 @@ headscale preauthkeys create --expiration "87600h" --user qwrt --reusable
 headscale nodes delete -i 1
 
 netstat -tulnp | grep 3478
-kill -SIGKILL 6685
 nc -zv goldenconnect.cn 27110
 Test-NetConnection -ComputerName goldenconnect.cn -Port 27110
 
@@ -120,32 +119,11 @@ reboot
 
 docker run --name derper -p 12345:12345 -p 3478:3478/udp -v /home/gaoyx/derp/:/app/certs -e DERP_CERT_MODE=manual -e DERP_ADDR=:12345 -e DERP_DOMAIN=goldenconnect.cn -d ghcr.io/yangchuansheng/derper:latest
 
-apt update && apt upgrade
-apt install -y wget git openssl curl
-wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
-rm -rf /usr/local/go && tar -xf go1.22.4.linux-amd64.tar.gz
-export PATH=$PATH:/root/go/bin/
-echo "export PATH=$PATH:/root/go/bin/" >> /etc/profile
-source /etc/profile
+sudo apt update && sudo  apt install -y wget git openssl curl
+wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
+tar -xf go1.23.0.linux-amd64.tar.gz
+export PATH=$HOME/go/bin:$PATH
 go env -w GO111MODULE=on
-# 下载 Go 安装包
-wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
-
-# 移除旧的 Go 版本（如果有）
-rm -rf /usr/local/go
-
-# 解压并将 Go 移动到 /usr/local 目录
-tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
-
-# 将 Go 的 bin 目录添加到 PATH 环境变量
-echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile
-
-# 重新加载 /etc/profile 以使 PATH 变化生效
-source /etc/profile
-
-# 启用 Go Modules
-go env -w GO111MODULE=on
-
 
 
 # 注释 func (m *manualCertManager) getCertificate(hi *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -154,16 +132,21 @@ go env -w GO111MODULE=on
         // }
 # 这三行
 
-until go install tailscale.com/cmd/derper@main ; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "Download Source Code Successfully."
-~/go/pkg/mod/tailscale.com@v1.69.0-pre.0.20240629031731-8965e87fa857/cmd/derper/cert.go
-cd ~/go/pkg/mod/tailscale.com@v1.71.0-pre.0.20240722215050-990442185379/cmd/derper
-go build -o /etc/derp/derper
-openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout /etc/derp/derp.hefei.com.key -out /etc/derp/derp.hefei.com.crt -subj "/CN=derp.hefei.com" -addext "subjectAltName=DNS:derp.hefei.com"
-nohup /etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp &
+git clone https://github.com/tailscale/tailscale.git
+cd ~/tailscale/cmd/derper/
+git reset --hard v1.58.0
+nano ~/tailscale/cmd/derper/cert.go
+go build -o /home/nebula/derp/derper
+openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout /home/nebula/derp/derp.hefei.com.key -out /home/nebula/derp/derp.hefei.com.crt -subj "/CN=derp.hefei.com" -addext "subjectAltName=DNS:derp.hefei.com"
+chmod 777 /home/nebula/derp/derper
+nohup /home/nebula/derp/derper -c /home/nebula/derp/derper.json -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /home/nebula/derp &
 
 python3 -m http.server 12346
 
-sudo cp tailscale tailscaled /usr/sbin/
+sudo chown 1000:1000 /usr/local/bin/ -R 
+cp tailscale tailscaled /usr/local/bin/
+sudo apt update && sudo apt install -y iptables
+sudo tailscaled
 sudo cp ./systemd/tailscaled.service /etc/systemd/system/
 sudo cp ./systemd/tailscaled.defaults /etc/default/tailscaled
 sudo systemctl daemon-reload

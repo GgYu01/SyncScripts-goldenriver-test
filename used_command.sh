@@ -197,3 +197,5 @@ rsync -aH --numeric-ids --delete /path/to/backup/ /path/to/source/
 tail -n 10 yocto/build/build.log alps/*.log | awk '
 /==>/ {print "\033[1;33m" $0 "\033[0m"; next}
 {print}'
+
+mount -o remount,rw /

@@ -1,6 +1,6 @@
-rclone copy 4K-30fps.mp4 laptop:D:/78images/testtool -vv \
---transfers 16 \
---checkers 32 \
+rclone copy downloads.tar laptop:D:/78images/testtool -vv \
+--transfers 128 \
+--checkers 256 \
 --tpslimit 10 \
 --tpslimit-burst 10 \
 --retries 3 \

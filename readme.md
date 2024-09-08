@@ -18,10 +18,10 @@ gr-nebula.py export-buildroot
 gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images
 exit
 
-cd ~/grpower/workspace/nebula && rm snapshot.xml && source scripts/env.sh && jiri runp 'git tag release-spm.mt8678_mt8676_2024_0829' && jiri runp 'git push origin release-spm.mt8678_mt8676_2024_0829 ' && jiri snapshot snapshot.xml
+cd ~/grpower/workspace/nebula && rm snapshot.xml && source scripts/env.sh && jiri runp 'git tag release-spm.mt8678_mt8676_2024_0903' && jiri runp 'git push origin release-spm.mt8678_mt8676_2024_0903 ' && jiri snapshot snapshot.xml
 
-git tag release-spm.mt8678_2024_0829
-git push origin release-spm.mt8678_2024_0829
+git tag release-spm.mt8678_2024_0903
+git push origin release-spm.mt8678_2024_0903
 git push origin :refs/tags/<tagname>
 git push origin HEAD:refs/for/release-spm.mt8678_2024_0726
 
@@ -54,8 +54,8 @@ cp -f ../../grt_be/workspace/out/video_server ../../yocto/prebuilt/hypervisor/gr
 git push grt-mt8678 HEAD:refs/for/release-spm.mt8678_2024_0726%topic=lua_dynamic_dram_size
 git push grt-mt8678 HEAD:refs/for/main
 
-repo forall -c "git tag release-spm.mt8678_2024_0829"
-repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0829"
+repo forall -c "git tag release-spm.mt8678_2024_0903"
+repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0903"
 
 grep -r -n -w .patch --include=".gitignore"
 
@@ -98,7 +98,7 @@ sudo systemctl daemon-reload
 sudo systemctl restart docker
 
 repo init "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0726/alps.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
-repo init "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0726/yocto.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
+repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0904/yocto.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
 jiri update -j=16 --attempts=10 --force-autoupdate=true --rebase-all=false --rebase-tracked=false --rebase-untracked=false --show-progress=true --color=auto -autoupdate=false -vv=true 
 --repo-url=https://gerrit-googlesource.proxy.ustclug.org/git-repo 
 
@@ -114,3 +114,6 @@ git rebase --onto origin/nebula a0d9d81cc^ 6fcb672db
 sudo docker save goldenriver/thyp-sdk:focal-0.4 -o thyp-sdk-focal-0.4.tar
 sudo ctr -n=k8s.io images import thyp-sdk-focal-0.4.tar
 sudo ctr -n=k8s.io images ls
+
+python3 -m pip install --upgrade --force-reinstall pip setuptools wheel
+python3 -m pip install --upgrade pip setuptools wheel 

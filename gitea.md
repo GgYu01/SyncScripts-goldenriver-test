@@ -19,9 +19,13 @@ mkdir -p /home/gitea/postgresql/data
 /home/gitea/postgresql/bin/createdb test
 /home/gitea/postgresql/bin/psql test
 
-https://dl.gitea.com/gitea/1.22.1/gitea-1.22.1-linux-amd64
+wget -O gitea https://dl.gitea.com/gitea/1.22.1/gitea-1.22.1-linux-amd64
 
-export GITEA_WORK_DIR=/home/gitea/gitdir/
-GITEA_WORK_DIR=/home/gitea/gitdir /home/gitea/gitea/gitea web -c /home/gitea/gitea/app.ini
-sudo apt install git
+export GITEA_WORK_DIR=/home/nebula/gitea
+nohup /home/nebula/bin/gitea web -c /home/nebula/app/app.ini &
 
+/home/nebula/bin/gitea admin user list --config /home/nebula/app/app.ini
+
+/home/nebula/bin/gitea admin user create --username gaoyx --password gaoyx --email gaoyx@goldenrivertek.com --admin --config /home/nebula/app/app.ini
+
+/home/nebula/bin/gitea admin user change-password --username admin --password admin --config /home/nebula/app/app.ini

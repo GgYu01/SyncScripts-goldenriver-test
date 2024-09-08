@@ -30,11 +30,6 @@ repo init "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt867
 git fetch ssh://gaoyx@www.goldenriver.com.cn:29420/yocto/src/hypervisor/grt refs/changes/60/460/2 && git cherry-pick FETCH_HEAD
 
 # 吴杰
-git fetch ssh://gaoyx@gerrit.grt.sy:29418/zircon refs/changes/40/11040/1 && git cherry-pick FETCH_HEAD
-git fetch ssh://gaoyx@gerrit.grt.sy:29418/zircon refs/changes/41/11041/1 && git cherry-pick FETCH_HEAD
-git fetch ssh://gaoyx@www.goldenriver.com.cn:29420/yocto/src/kernel/modules/mt8678/virt/grt refs/changes/16/616/1 && git cherry-pick FETCH_HEAD
-git fetch ssh://gaoyx@www.goldenriver.com.cn:29420/alps/vendor/mediatek/kernel_modules/virt refs/changes/15/615/1 && git cherry-pick FETCH_HEAD
-
 
 # docker 4 : liujian
 # docker 6 : shengjp wangzhimian
@@ -51,4 +46,5 @@ network:
         addresses:
           - 192.168.50.20       # 手动指定DNS服务器
 
-http://192.168.170.7:5000/oo/r/zOhdvZdCKBvh2nMQGhzgg84EONhvPukR#heading_id=G3RtEZygMN
+@浮生六记浅云   @王颖   data abort 注入guest OS的patch已經驗證完了，再麻煩測試合入:
+http://gerrit.grt.sy/c/zircon/+/10260

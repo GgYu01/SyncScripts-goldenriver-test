@@ -167,7 +167,7 @@ sudo blkid /dev/my_vg/my_lv
 然后编辑 `/etc/fstab` 并添加如下行：
 
 ```bash
-UUID=你的UUID /mnt/my_storage ext4 defaults 0 0
+UUID=你的UUID /mnt/sso ext4 defaults 0 0
 ```
 
 保存并退出编辑器，确保在下次启动时自动挂载逻辑卷。

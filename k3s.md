@@ -48,65 +48,6 @@ docker run -d --privileged --add-host k3s-server:<server_ip> -e K3S_URL=https://
        image: nginx
    ```
 
-### 关于 K3S_URL 的设置
-在您的 `docker-compose.yml` 文件中，k3s-agent 通过 `K3S_URL` 环境变量连接到 k3s-server。如果您正在使用 Docker Compose 在同一台机器上启动这些服务，那么您已经正确地将 `K3S_URL` 设置为 `https://k3s-server:6443`。这是因为在 Docker Compose 网络中，服务之间可以使用服务名进行通信，作为内部 DNS 解析的一部分。
-
-### 确保配置正确
-- **检查服务连接**:
-  确保 `k3s-agent` 可以成功连接到 `k3s-server`。检查 k3s-agent 容器的日志以确认它已经成功注册到服务器上。
-  ```bash
-  docker logs k3s-agent
-  ```
-
-- **检查节点和 Pod**:
-  使用以下命令查看集群中的节点和 Pod，确保节点被正确标记，且 Pod 被调度到预期的节点。
-  ```bash
-  kubectl get nodes
-  kubectl get pods -o wide
-  ```
-
-通过这些步骤，您可以控制 pod 的调度位置，确保它们不会在 k3s-server 节点上运行。这种方法提供了灵活的集群管理策略，使得资源利用更加合理，同时保持集群的可管理性和可扩展性。
-
-如果你已经启动了 Rancher 官方封装的 K3S Docker 实例，但没有在本机安装任何 K3S、K8S 服务或 `kubectl`，你可以使用 K3S 容器内自带的 `kubectl` 来进行管理。以下是具体步骤：
-
-
-### 将 `kubectl` 命令代理到本地
-如果你希望在本机使用 `kubectl` 命令而无需每次都进入容器，可以通过创建一个简单的脚本来代理 `kubectl` 命令。
-
-1. **创建代理脚本**：
-   在你的主机上创建一个名为 `kubectl` 的脚本文件，并添加以下内容：
-
-   ```sh
-   #!/bin/sh
-   docker exec -i k3s-server kubectl "$@"
-   ```
-
-2. **赋予执行权限**：
-   为该脚本文件赋予可执行权限：
-
-   ```sh
-   chmod +x kubectl
-   ```
-
-3. **将脚本放置在 PATH 中**：
-   将该脚本放置在你的 `PATH` 环境变量包含的目录中，例如 `/usr/local/bin`：
-
-   ```sh
-   sudo mv kubectl /usr/local/bin/
-   ```
-
-现在，你可以在本机直接使用 `kubectl` 命令，而无需每次都进入容器。例如：
-
-```sh
-kubectl get nodes
-```
-
-这将通过 Docker 容器中的 `kubectl` 命令来执行。这样，你就能在本机方便地管理 K3S 集群而无需安装任何外部应用程序。
-
-ctr -n k8s.io images tag docker.io/goldenriver/thyp-sdk-0.4:latest 100.64.0.11:5001/goldenriver/thyp-sdk-0.4:latest
-ctr -n k8s.io images push 100.64.0.11:5001/goldenriver/thyp-sdk-0.4:latest
-docker exec -it k3s-server-bridge ctr -n k8s.io images push --plain-http 100.64.0.11:5001/goldenriver/thyp-sdk-0.4:latest
-
 curl -sfL https://get.k3s.io | K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa807b3e6cd49a13a13e56ec45c248755::server:db452fe505b2cbf87d48c37c492df7c8" K3S_URL="https://100.64.0.11:6443" INSTALL_K3S_SYMLINK=force sh -s - server \
   --server https://100.64.0.11:6443 \
   --datastore-endpoint="http://100.64.0.11:2379" \
@@ -116,7 +57,7 @@ curl -sfL https://get.k3s.io | K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa80
 sudo journalctl -u k3s -n 30 --no-pager
 tail ~/k3s/k3s-server.log -n 20
 
-curl -sfL https://get.k3s.io | K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa807b3e6cd49a13a13e56ec45c248755::server:db452fe505b2cbf87d48c37c492df7c8" K3S_URL="https://100.64.0.11:6443" INSTALL_K3S_SYMLINK=force sh -s - agent \
+curl -sfL https://get.k3s.io | K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa807b3e6cd49a13a13e56ec45c248755::server:db452fe505b2cbf87d48c37c492df7c8" INSTALL_K3S_SYMLINK=force sh -s - agent \
   --server https://100.64.0.11:6443 \
   --v=4 \
   --log ~/k3s/k3s-agent.log
@@ -124,3 +65,26 @@ curl -sfL https://get.k3s.io | K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa80
 sudo docker save goldenriver/thyp-sdk:focal-0.4 -o thyp-sdk-focal-0.4.tar
 sudo ctr -n=k8s.io images import thyp-sdk-focal-0.4.tar
 sudo ctr -n=k8s.io images ls
+
+/usr/local/bin/k3s-uninstall.sh
+/usr/local/bin/k3s-agent-uninstall.sh
+sudo rm -rf /var/lib/rancher/k3s sudo rm -rf /etc/rancher/k3s
+sudo rm -f /usr/local/bin/k3s
+sudo rm -f /etc/cni/net.d/10-flannel.conflist
+
+sudo tee /etc/crictl.yaml <<EOF
+runtime-endpoint: unix:///run/k3s/containerd/containerd.sock
+image-endpoint: unix:///run/k3s/containerd/containerd.sock
+timeout: 10
+debug: false
+EOF
+export CONTAINER_RUNTIME_ENDPOINT=unix:///run/k3s/containerd/containerd.sock
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_SYMLINK=force K3S_DATA_DIR=/mnt/sso/k3sdata K3S_NODE_NAME=gr09machine K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa807b3e6cd49a13a13e56ec45c248755::server:db452fe505b2cbf87d48c37c492df7c8" \
+K3S_URL="https://100.64.0.11:6443" \
+INSTALL_K3S_EXEC="agent --with-node-id 001 --private-registry /mnt/sso/registries.yaml" \
+K3S_LOG_FILE="$HOME/k3s.log" sh -
+
+scp derp@100.64.0.18:/home/derp/ZOT/user_home/zotdata/server.crt /mnt/sso/zot-server.crt
+
+K3S_DATA_DIR=/mnt/sso/k3sdata K3S_NODE_NAME=gramachine K3S_TOKEN="K109e66610425c810b2bbf8d7b29e1dc56aa807b3e6cd49a13a13e56ec45c248755::server:db452fe505b2cbf87d48c37c492df7c8" K3S_URL="https://100.64.0.11:6443" K3S_LOG_FILE="$HOME/k3s.log" k3s agent --with-node-id 001 --private-registry /mnt/sso/registries.yaml

@@ -1,8 +1,11 @@
 Windows Remote Desktop 通常用于连接到具有图形用户界面的系统。然而，要连接到没有图形化界面的 Ubuntu 系统，我们需要采取一些额外的步骤。让我为您详细解释这个过程。
 
-
-
-
+sudo apt update
+sudo apt install xfce4 xfce4-goodies xrdp xorg dbus-x11 x11-xserver-utils x11vnc -y
+sudo adduser xrdp ssl-cert
+nano /etc/xrdp/xrdp.ini
+startxfce4 & 
+service xrdp start
 
 # 在无 GUI 的 Ubuntu 系统上配置远程桌面访问
 
