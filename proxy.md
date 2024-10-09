@@ -13,7 +13,6 @@ nano /etc/dhcp/dhclient.conf
 supersede domain-name-servers 223.5.5.5;
 systemctl restart networking
 
-
 until wget https://github.com/Loyalsoldier/clash-rules/raw/hidden/software/clash-premium/clash-linux-amd64-v3-2023.08.17.gz; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "Download CLASH successfully."  &&  gzip -d clash-linux-amd64-v3-2023.08.17.gz  &&  mv clash-linux-amd64-v3-2023.08.17 clash  &&  chmod 777 clash  &&  sudo chown 1000:1000 /usr/local/bin -R  &&  sudo mv clash /usr/local/bin/  &&  mkdir -p ~/.config/clash  &&  cd ~/.config/clash/  &&  until curl -o config.yaml "https://r0al0.no-mad-world.club/link/NfRPyEGviw3DoYWl?clash=3&extend=1"; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "curl configYAML successfully." 
 sed -i '/hosts:/,/dns:/!b;/dns:/i\
 # 添加 TUN 模式配置\
@@ -25,8 +24,9 @@ tun:\
   auto-route: true\
   auto-detect-interface: true\
 ' config.yaml
+sed -i '/name: 🔰 选择节点/,/proxies:/c\  - name: 🔰 选择节点\n    type: url-test\n    url: '\''https://www.youtube.com/'\''\n    interval: 30\n    proxies:' config.yaml
 
-nohup sudo clash -d ~/.config/clash/ &
+nohup clash -d ~/.config/clash/ &
 
 
 

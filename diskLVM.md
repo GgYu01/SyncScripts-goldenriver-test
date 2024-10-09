@@ -3,6 +3,17 @@ https://linux.cn/article-14871-1.html
 
 要在 Ubuntu 22 中使用 GPT 分区格式格式化两个物理磁盘并合并成一个大磁盘，但不使用 RAID 0，并且尽量减少对 CPU 的影响，你可以考虑使用 LVM（逻辑卷管理器）。这种方法不会像 RAID 0 那样需要额外的计算来分配数据，从而可以减少 CPU 负担。下面是详细的步骤：
 
+sudo pvcreate /dev/nvme1n1 /dev/nvme0n1
+sudo vgcreate nvme_vg /dev/nvme1n1 /dev/nvme0n1
+sudo lvcreate -l 100%VG -n nvme_lv nvme_vg
+sudo mkfs.ext4 /dev/nvme_vg/nvme_lv
+sudo mkdir /mnt/sso
+sudo mount /dev/nvme_vg/nvme_lv /mnt/sso
+
+# sudo nano /etc/fstab
+/dev/nvme_vg/nvme_lv /mnt/sso ext4 defaults 0 2
+
+
 ### 1. 确保所有工具都已安装
 首先，确保你的系统安装了 `lvm2` 包。可以通过以下命令安装：
 ```bash

@@ -126,7 +126,7 @@ def handle_repo_warehouse(repo_name, repo_path, output_subdir, latest_tag, secon
         os.chdir(repo_path)
 
         # Read the manifest file to get all git repository paths
-        manifest_path = os.path.join('.repo', 'manifests', f'mt8678/grt/0628/{repo_name}.xml')
+        manifest_path = os.path.join('.repo', 'manifests', f'mt8678/grt/0904/{repo_name}.xml')
         tree = ET.parse(manifest_path)
         root = tree.getroot()
 
@@ -352,8 +352,8 @@ def main():
     # Get the latest two tags from the Class A git repository
     class_a_repo_path = os.path.join(CODE_ROOT_DIR, GIT_PATHS[CATEGORY_A_REPOS[0]])
     latest_tag, second_latest_tag = get_latest_two_tags(class_a_repo_path)
-    # latest_tag='release-spm.mt8678_2024_0816'
-    # second_latest_tag='release-spm.mt8678_2024_0814'
+    # latest_tag='release-spm.mt8678_2024_0918'
+    # second_latest_tag='release-spm.mt8678_2024_0913_02'
     if not latest_tag or not second_latest_tag:
         print_formatted_text(HTML("<red>Error: Failed to retrieve tags.</red>"))
         return

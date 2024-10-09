@@ -2,7 +2,12 @@ cd ~/grt/thyp-sdk && git clean -ffd && cd ~/grpower/workspace && rm -rf buildroo
 cd ~/grt/thyp-sdk && git clean -ffd && ./build_all.sh
 scp ~/grt/thyp-sdk/products/mt8678-mix/out/gz.img ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/tee.img Administrator@100.64.0.3:D:/78images
 export NO_PIPENV_SHELL=1 && cd ~/grpower/ && source scripts/env.sh && gr-nebula.py update-source --branch-name main
-cd ~/grt && git reset --hard && git clean -fdx && git pull && cd ~/grt_be && git pull && cd ~/yocto && repo forall -c "git reset --hard && git clean -fd" && repo sync --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --fail-fast --no-repo-verify && cd ~/alps && repo forall -c "git reset --hard && git clean -fd " && repo sync --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --fail-fast --no-repo-verify
+cd ~/grt && git reset --hard && git clean -fdx && git pull && \
+cd ~/grt_be && git pull && \
+cd ~/yocto && repo forall -c "git reset --hard && git clean -fd" && \
+repo sync --no-repo-verify --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose   && \
+cd ~/alps && repo forall -c "git reset --hard && git clean -fd " && \
+repo sync --no-repo-verify --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose 
 # 下载源码
 git clone "ssh://gaoyx@gerrit.grt.sy:29418/grpower"
 cd ~/grpower/
@@ -28,7 +33,7 @@ git push origin HEAD:refs/for/release-spm.mt8678_2024_0726
 cd ~/grt/thyp-sdk
 git clean -ffd 
 ./build_all.sh
-    
+
 cd ~/grt_be/workspace
 git clean -ffd 
 ./build.sh
@@ -97,7 +102,7 @@ sudo mkdir -p /etc/docker
 sudo systemctl daemon-reload
 sudo systemctl restart docker
 
-repo init "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0726/alps.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
+repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0904/alps.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
 repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0904/yocto.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
 jiri update -j=16 --attempts=10 --force-autoupdate=true --rebase-all=false --rebase-tracked=false --rebase-untracked=false --show-progress=true --color=auto -autoupdate=false -vv=true 
 --repo-url=https://gerrit-googlesource.proxy.ustclug.org/git-repo 
@@ -117,3 +122,13 @@ sudo ctr -n=k8s.io images ls
 
 python3 -m pip install --upgrade --force-reinstall pip setuptools wheel
 python3 -m pip install --upgrade pip setuptools wheel 
+
+
+rm -rf /home/nebula/alps/vendor/mediatek/proprietary/scripts/sign-image_v2/out/*
+cp ~/grt/thyp-sdk/products/mt8678-mix/out/gz.img /home/nebula/alps/vendor/mediatek/proprietary/scripts/sign-image_v2/out
+
+cd ~/alps
+python vendor/mediatek/proprietary/scripts/sign-image_v2/sign_flow.py mt6991 auto8678p1_64_bsp
+
+cd ~/alps/vendor/mediatek/proprietary/scripts/sign-image_v2/out/resign/bin/multi_tmp
+

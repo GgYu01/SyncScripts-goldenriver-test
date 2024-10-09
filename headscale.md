@@ -139,9 +139,10 @@ nano ~/tailscale/cmd/derper/cert.go
 go build -o /home/nebula/derp/derper
 openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout /home/nebula/derp/derp.hefei.com.key -out /home/nebula/derp/derp.hefei.com.crt -subj "/CN=derp.hefei.com" -addext "subjectAltName=DNS:derp.hefei.com"
 chmod 777 /home/nebula/derp/derper
-nohup /home/nebula/derp/derper -c /home/nebula/derp/derper.json -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /home/nebula/derp &
+nohup /home/nebula/derp/derper -c /home/nebula/derp/derper.json -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /home/nebula/derp > /home/nebula/derp.log 2>&1 &
 
-python3 -m http.server 12346
+sudo netstat -tlnp | grep 12346
+nohup  python3 -m http.server 12346 > map.log 2>&1 &
 
 sudo chown 1000:1000 /usr/local/bin/ -R 
 cp tailscale tailscaled /usr/local/bin/

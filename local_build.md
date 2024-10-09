@@ -3,43 +3,47 @@
 
 ### **项目背景与需求概述**
 
-我需要一个专业、复杂且高度模块化的 Python 3.8 脚本，用于在 Ubuntu 20 中编译不同模块的代码。该脚本需要具备强大的可扩展性和模块化设计，以适应团队的长期维护需求。脚本将用于编译 `nebula`、`hee`、`sdk`、`tee`、`grt_be`、`android` 和 `yocto` 模块，并根据命令行参数决定执行哪些模块以及执行的顺序。
+我需要一个专业、复杂且高度模块化的 Python 3.8 脚本，用于在 Ubuntu 20 中编译不同模块的代码。该脚本需要具备强大的可扩展性和模块化设计，以适应团队的长期维护需求。脚本将用于编译 `nebula`、`hee`、`sdk`、`tee`、`grt_be`、`android` 和 `yocto` 模块，并修改脚本中的参数决定执行哪些模块以及执行的顺序。在开始编译 nebula、hee、sdk、tee、grt_be、android 和 yocto 模块前，我需要一个模块化的清理步骤，确保每个模块在编译前按要求清理。此 Python 3.8 脚本应支持根据参数灵活决定需要编译的模块、执行顺序，并在所有编译任务前先统一执行清理操作，以保证编译环境的整洁。
 
 ### **编译流程与具体要求**
 
 编译流程如下，您需要将其模块化并实现：
-1. **Nebula编译**：
-   - 设置编译参数。
-export NO_PIPENV_SHELL=1
-cd ~/grpower/ ; source scripts/env.sh 
+1. **Nebula编译**：  
    - 清理相关目录并重置代码。
-cd ~/grpower/workspace ； rm -rf buildroot-pvt8675/ nebula-ree/ 
-cd ~/grpower/workspace/nebula ; rm -rf out 
-cd ~/grt/ ； git clean -ffd ；git reset --hard 
+cd ~/grpower/workspace && rm -rf buildroot-pvt8675/ nebula-ree/ buildroot-pvt8675_tee/ && cd ~/grpower/workspace/nebula && rm -rf out 
    - 执行编译命令，并导出相关文件。
-cd ~/grpower/ ; gr-nebula.py build 
-gr-nebula.py export-buildroot ;
+export NO_PIPENV_SHELL=1 && \
+cd ~/grpower/ && source scripts/env.sh && \
+cd ~/grpower/ && gr-nebula.py build > ~/grt/hee.log 2>&1
 
 2. **Hee导出**：
-   - 设置编译产品名称。
-gr-android.py set-product --product-name pvt8675 ;
+
    - 执行编译导出命令。
-gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images ;
+gr-nebula.py export-buildroot >> ~/grt/hee.log 2>&1 && \
+gr-android.py set-product --product-name pvt8675 >> ~/grt/hee.log 2>&1 && \
+gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images >> ~/grt/hee.log 2>&1
 
 3. **SDK编译及Hee镜像打包**：
+   - 清理相关目录并重置代码。
+cd ~/grt/ && git clean -fdx && git reset --hard
+cd ~/yocto/prebuilt/hypervisor/grt
+git clean -fd
    - 执行配置及编译命令，并打包镜像。
-cd ~/grt/thyp-sdk ;
-git clean -ffd ;
-./configure.sh /home/nebula/grt/nebula-sdk/ > /dev/null ;
-./build_all.sh
+cd ~/grt/thyp-sdk && \
+./configure.sh /home/nebula/grt/nebula-sdk/ > /dev/null && \
+./build_all.sh > ~/grt/sdk.log 2>&1 
 
 4. **Tee导出及打包**：
    - 设置编译产品名称。
-gr-android.py set-product --product-name pvt8675_tee
+gr-nebula.py export-buildroot >> ~/grt/tee.log 2>&1 && \
+gr-android.py set-product --product-name pvt8675 >> ~/grt/tee.log 2>&1 && \
+gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images >> ~/grt/tee.log 2>&1 && \
    - 执行导出及打包命令。
-mkdir -p ~/grt/teetemp
-gr-android.py buildroot export_nebula_images -o ~/grt/teetemp
-cp -v ~/grt/teetemp/nebula*.bin /home/nebula/grt-devel/mt8678_evb/hypervisor/alps_mt8678_0726/vendor/mediatek/proprietary/trustzone/grt/source/common/kernel/
+gr-nebula.py export-buildroot >> ~/grt/tee.log 2>&1 && \
+gr-android.py set-product --product-name pvt8675_tee >> ~/grt/tee.log 2>&1 && \
+mkdir -p ~/grt/teetemp && \
+gr-android.py buildroot export_nebula_images -o ~/grt/teetemp >> ~/grt/tee.log 2>&1 && \
+cp -v ~/grt/teetemp/nebula*.bin ~/alps/vendor/mediatek/proprietary/trustzone/grt/source/common/kernel/
 cd ~/alps
 rm -rf out 
 source build/envsetup.sh && export OUT_DIR=out && lunch vext_auto8678p1_64_bsp_vm-userdebug && make vext_images
@@ -101,17 +105,19 @@ cp ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/vbmeta_system.img ~/yoc
 cp ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/vbmeta_vendor.img ~/yocto/build/tmp/deploy/images/auto8678p1_64_hyp
 cp ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/scp.img ~/yocto/build/tmp/deploy/images/auto8678p1_64_hyp
 cp ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/tee.img ~/yocto/build/tmp/deploy/images/auto8678p1_64_hyp
+cp ~/yocto/prebuilt/bsp/collect-bins/mt6991/modem/mcf_ota.img ~/yocto/build/tmp/deploy/images/auto8678p1_64_hyp
+
    - 将文件通过SCP传输到指定的远程服务器。
 rm -rf ~/78images
 mkdir ~/78images
 cp -Lr ~/yocto/build/tmp/deploy/images/auto8678p1_64_hyp ~/78images
-scp -Cr ~/78images/auto8678p1_64_hyp/* Administrator@100.64.0.3:D:/78images/auto8678p1_64_hyp_gpu_0813_zhoubo
+scp -Cr ~/78images/auto8678p1_64_hyp/* Administrator@100.64.0.3:D:/78images/auto8678p1_64_hyp_gpu_1008_fanshuming_watch_dog
 
 ### **模块执行顺序与配置**
 
 脚本需要具备以下功能：
-- 用户可以通过命令行参数决定执行哪些模块以及执行的顺序，而且可以设置并发编译，比如编译alps的同时，顺序执行编译nebula和编译yocto，互不干扰。
-- 支持定义预设的模块执行顺序，用户可以通过传递参数快速调用预设配置，无需每次手动输入模块顺序。
+- 用户可以通过命令行参数决定执行哪些模块以及执行的顺序，而且可以设置并发编译，比如编译alps的同时，顺序执行编译nebula和编译yocto，互不干扰，脚本中默认提供三个互不干扰的异步并发任务队列供用户使用。
+- 支持定义预设的模块执行顺序，用户可以通过修改脚本代码中部分参数快速调用预设配置，无需每次手动输入模块顺序。
 
 ### **代码设计与规范**
 
@@ -141,7 +147,7 @@ scp -Cr ~/78images/auto8678p1_64_hyp/* Administrator@100.64.0.3:D:/78images/auto
    - 动态输出已完成的模块和未完成的模块，提供直观的进度条和已完成模块数量提示。
 
 2. **错误处理**：
-   - 详细的执行过程判断和美观的信息输出界面，包括警告和错误信息的清晰展示。
+   - 详细的执行过程判断和美观的信息输出界面，包括警告和错误信息的清晰展示，说明错误出现在哪个模块的哪个命令。
 
 ### **技术和代码规范**
 

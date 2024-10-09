@@ -29,10 +29,9 @@ repo init "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt867
 # CVE
 git fetch ssh://gaoyx@www.goldenriver.com.cn:29420/yocto/src/hypervisor/grt refs/changes/60/460/2 && git cherry-pick FETCH_HEAD
 
-# 吴杰
-
-# docker 4 : liujian
-# docker 6 : shengjp wangzhimian
+# android reboot --> shurui 
+# MTBF grt_be debug
+# grt be patch
 network:
   version: 2
   ethernets:
@@ -46,5 +45,28 @@ network:
         addresses:
           - 192.168.50.20       # 手动指定DNS服务器
 
-@浮生六记浅云   @王颖   data abort 注入guest OS的patch已經驗證完了，再麻煩測試合入:
-http://gerrit.grt.sy/c/zircon/+/10260
+
+MT8678 2024/09/12测试情况
+0904基线：
+add product ID  owner：李志健 James 测试通过，已合入
+CVE             owner：陶杰 正在验证
+CPU性能优化     owner：陈平平
+fix: hw interrupt inject issue  owner：李加春 测试通过，已合入
+fix coverity report  owner：武阳 测试通过，已合入
+0904 8+8 版本 reboot 8次Android reboot系统重启
+部分情况下Android reboot5次后 ，UOS持续重启，yocto正常。Android启动后ADB无法连接
+
+0726_patch（BYD0802）
+无HWT改动情况下byd load 5次Android reboot系统重启
+
+# 为了Secure boot 加入公钥平台id判断
+# cpu freq
+# DhryStone 优化
+# 8676 wdt workaround
+# 春阳 utrace
+
+gr-nebula.py export-sdk -o /home/nebula/grt/nebula-sdk
+
+git fetch ssh://gaoyx@gerrit.grt.sy:29418/zircon refs/changes/93/11293/5 && git cherry-pick FETCH_HEAD
+cd7b3c16fa7e56db48c59797530efaa05cb65ea0
+ec065a79fa90a25cbbc174bdcd2de10430223510

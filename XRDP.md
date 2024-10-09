@@ -3,6 +3,7 @@ Windows Remote Desktop 通常用于连接到具有图形用户界面的系统。
 sudo apt update
 sudo apt install xfce4 xfce4-goodies xrdp xorg dbus-x11 x11-xserver-utils x11vnc -y
 sudo adduser xrdp ssl-cert
+# 改端口
 nano /etc/xrdp/xrdp.ini
 startxfce4 & 
 service xrdp start

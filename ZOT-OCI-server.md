@@ -12,7 +12,8 @@ skopeo list-tags docker://localhost:5220/debian --tls-verify=false
 skopeo list-tags docker://www.goldenriver.com.cn:5220/thyp-sdk --tls-verify=false
 curl -X GET http://localhost:5220/v2/_catalog
 curl -X GET http://112.30.116.152:5220/v2/_catalog?n=100&last=
-
+curl -k -X GET http://www.goldenriver.com.cn:5220/v2/_catalog
+curl -X GET https://www.goldenriver.com.cn:5220/v2/_catalog?n=100&last=
 
 # 推送OCI镜像:
 ```bash

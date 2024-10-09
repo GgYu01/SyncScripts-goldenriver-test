@@ -23,6 +23,7 @@ du -d 1 -h DATA/
 vnstat -i eth0 -l
 sudo apt install -y linux-tools-5.15.0-91-generic linux-cloud-tools-5.15.0-91-generic
 watch -n 1 sudo cpupower monitor
+stress-ng --cpu 32 --cpu-method int128 --metrics-brief --timeout 1h
 # 内存
 cat /proc/sys/vm/swappiness
 sudo sysctl vm.swappiness=100
@@ -183,7 +184,7 @@ aplay -Dhw:0,10 -r48000 -c2 -fS16_LE /data/test.wav
 
 
 
-
+rclone copy auto8678p1_64_hyp_gpu_0429_notup /mnt/seaweedfs/auto8678p1_64_hyp_gpu_0429_notup --progress --transfers=16
 # 直到成功为止
 until docker compose up -d; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "Docker Compose started successfully."
 
@@ -199,3 +200,7 @@ tail -n 10 yocto/build/build.log alps/*.log | awk '
 {print}'
 
 mount -o remount,rw /
+adb -s YOCTO shell mount -o remount,rw / 
+
+# 查看帧数
+logcat | grep hwcomposer | grep fps
