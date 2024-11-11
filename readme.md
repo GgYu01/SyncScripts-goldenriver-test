@@ -1,12 +1,12 @@
 cd ~/grt/thyp-sdk && git clean -ffd && cd ~/grpower/workspace && rm -rf buildroot-pvt8675/ nebula-ree/ && cd ~/grpower/workspace/nebula && rm -rf out && cd ~/grpower/ && source scripts/genv.sh && cd ~/grpower/ && gr-nebula.py build && gr-nebula.py export-buildroot && gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images 
 cd ~/grt/thyp-sdk && git clean -ffd && ./build_all.sh
-scp ~/grt/thyp-sdk/products/mt8678-mix/out/gz.img ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/tee.img Administrator@100.64.0.3:D:/78images
+scp ~/grt/thyp-sdk/products/mt8678-mix/out/gz.img ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/tee.img Administrator@100.64.0.1:D:/78images
 export NO_PIPENV_SHELL=1 && cd ~/grpower/ && source scripts/env.sh && gr-nebula.py update-source --branch-name main
 cd ~/grt && git reset --hard && git clean -fdx && git pull && \
 cd ~/grt_be && git pull && \
-cd ~/yocto && repo forall -c "git reset --hard && git clean -fd" && \
+cd ~/yocto && repo forall -c "git reset --hard && git clean -fd" > /dev/null 2>&1 && \
 repo sync --no-repo-verify --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose   && \
-cd ~/alps && repo forall -c "git reset --hard && git clean -fd " && \
+cd ~/alps && repo forall -c "git reset --hard && git clean -fd " > /dev/null 2>&1 && \
 repo sync --no-repo-verify --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose 
 # 下载源码
 git clone "ssh://gaoyx@gerrit.grt.sy:29418/grpower"
@@ -64,27 +64,6 @@ repo forall -c "git push grt-mt8678 release-spm.mt8678_2024_0903"
 
 grep -r -n -w .patch --include=".gitignore"
 
-adb -s YOCTO push nbl_vmm /usr/bin/
-adb -s YOCTO push nbl_vm_ctl /usr/bin/
-adb -s YOCTO push nbl_vm_srv /usr/bin/
-adb -s YOCTO push libvmm.so /usr/lib64/
-adb -s YOCTO push uos_alps_pv8678.json /vendor/etc/hyper_android/
-adb -s YOCTO shell 'chmod 777 /usr/bin/nbl_vmm'
-adb -s YOCTO shell 'chmod 777 /usr/bin/nbl_vm_ctl'
-adb -s YOCTO shell 'chmod 777 /usr/bin/nbl_vm_srv'
-adb -s YOCTO shell 'chmod 777 /usr/lib64/libvmm.so'
-adb -s YOCTO shell 'chmod 777 /vendor/etc/hyper_android/uos_alps_pv8678.json'
-adb -s YOCTO push gpu_server /usr/bin/
-adb -s YOCTO push video_server /usr/bin/
-adb -s YOCTO shell 'chmod 777 /usr/bin/gpu_server'
-adb -s YOCTO shell 'chmod 777 /usr/bin/video_server'
-chmod 777 /usr/bin/nbl_vmm
-chmod 777 /usr/bin/nbl_vm_ctl
-chmod 777 /usr/bin/nbl_vm_srv
-chmod 777 /usr/lib64/libvmm.so
-chmod 777 /vendor/etc/hyper_android/uos_alps_pv8678.json
-chmod 777 /usr/bin/gpu_server
-chmod 777 /usr/bin/video_server
 # 创建目录
 sudo mkdir -p /etc/docker
 # 写入镜像配置
@@ -102,16 +81,15 @@ sudo mkdir -p /etc/docker
 sudo systemctl daemon-reload
 sudo systemctl restart docker
 
-repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0904/alps.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
-repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0904/yocto.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
-jiri update -j=16 --attempts=10 --force-autoupdate=true --rebase-all=false --rebase-tracked=false --rebase-untracked=false --show-progress=true --color=auto -autoupdate=false -vv=true 
+repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/1001/alps.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
+repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/1001/yocto.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
+git clone "ssh://gaoyx@www.goldenriver.com.cn:29420/yocto/src/hypervisor/grt" --depth 2 -j 60 --single-branch --branch release-spm.mt8678_2024_1001
+jiri update -j=8 --attempts=10 --force-autoupdate=true --rebase-all=false --rebase-tracked=false --rebase-untracked=false --show-progress=true --color=auto -autoupdate=false -vv=true 
 --repo-url=https://gerrit-googlesource.proxy.ustclug.org/git-repo 
 
 https://syofficenas01.cn1.quickconnect.cn/oo/r/z96z2COzgLupO37auxXknALNaVUIrxKZ
 
 # 筛选 ：status:merged branch:nebula (project:garnet OR project:zircon)
-
-scp gpu_server libvmm.so nbl_vm_ctl nbl_vm_srv nbl_vmm uos_alps_pv8678.json video_server Administrator@100.64.0.3:D:/78images/auto8678p1_64_hyp_gpu_0802_allpatch
 
 git rebase --onto origin/nebula a0d9d81cc^ 6fcb672db
 
@@ -132,3 +110,30 @@ python vendor/mediatek/proprietary/scripts/sign-image_v2/sign_flow.py mt6991 aut
 
 cd ~/alps/vendor/mediatek/proprietary/scripts/sign-image_v2/out/resign/bin/multi_tmp
 
+# 切换到 Nebula 源码目录
+mkdir -p ~/grpower/workspace/nebula
+cd ~/grpower/workspace/nebula
+mkdir -p ~/grpower/workspace/nebula/.jiri_root/bin
+
+
+# 删除一些旧的配置文件
+rm -f .jiri_manifest .config .prebuilts_config
+
+# 执行 jiri 命令以从 gerrit 仓库中获取最新的 manifest 文件，并更新到指定的分支
+~/grpower/bin/jiri -j=2 import -remote-branch="master" "cci/nebula-main" ssh://gerrit:29418/manifest
+
+# 使用 jiri 执行代码检出并强制覆盖
+~/grpower/bin/jiri -j=8 runp git checkout -f JIRI_HEAD --detach 
+
+# 更新代码仓库
+~/grpower/bin/jiri -j=2 update -gc -autoupdate=false -run-hooks=false --attempts=10 --force-autoupdate=true --rebase-all=false --rebase-tracked=false --rebase-untracked=false --show-progress=true --color=auto  
+
+# 如果需要清理未提交的本地更改，可以执行以下命令
+~/grpower/bin/jiri -j=8 runp git clean -f -d -x
+~/grpower/bin/jiri -j=8 runp "git tag -l | xargs git tag -d && git fetch -t"
+
+# 再次执行更新命令
+~/grpower/bin/jiri -j=8 update -gc -autoupdate=false -hook-timeout=30
+
+# 设置 git 的推送 URL
+~/grpower/bin/jiri -j=8 runp "git remote get-url origin | sed 's/gerrit/gerrit-review/' | xargs git remote set-url --push origin"

@@ -3,7 +3,7 @@ chmod 777 /usr/bin/headscale
 
 # 如果你是在自己的服务器上部署的，请将 <HEADSCALE_PUB_ENDPOINT> 换成你的 Headscale 公网 IP 或域名
 tailscale up --login-server=http://112.30.116.152:27110 --accept-routes=true --accept-dns=false --advertise-routes=192.168.20.0/24 --reset --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33
-tailscale up --login-server=http://112.30.116.152:27110 --reset --accept-routes=true --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33 
+tailscale up --login-server=http://112.30.116.152:27110 --reset --accept-routes=true --force-reauth --authkey 047077e92b23de55841dffbc762c445fd1cbe2d065db991e 
 
 /etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp
 
@@ -153,3 +153,10 @@ sudo cp ./systemd/tailscaled.defaults /etc/default/tailscaled
 sudo systemctl daemon-reload
 sudo systemctl start tailscaled
 sudo systemctl enable tailscaled
+
+
+
+
+
+
+sudo tailscale up --login-server=http://112.30.116.152:27110 --reset --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33 --advertise-routes=192.168.170.0/24

@@ -4,9 +4,13 @@ sudo apt update
 sudo apt install xfce4 xfce4-goodies xrdp xorg dbus-x11 x11-xserver-utils x11vnc -y
 sudo adduser xrdp ssl-cert
 # 改端口
-nano /etc/xrdp/xrdp.ini
-startxfce4 & 
-service xrdp start
+sudo nano /etc/xrdp/xrdp.ini
+
+sudo mkdir -p /run/xrdp/
+sudo chmod 777 /run/xrdp/ -R
+sudo startxfce4 
+
+sudo service xrdp start
 
 # 在无 GUI 的 Ubuntu 系统上配置远程桌面访问
 

@@ -53,3 +53,5 @@ curl http://112.30.116.152:9332/volumes
 curl http://112.30.116.152:9332/dir/status
 
 nc -vz 100.64.0.5 5005
+
+NFS-Ganesha  用于创建NFS

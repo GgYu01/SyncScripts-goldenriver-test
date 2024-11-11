@@ -1,67 +1,84 @@
-until wget https://github.com/Loyalsoldier/clash-rules/raw/hidden/software/clash-premium/clash-linux-amd64-v3-2023.08.17.gz; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "Download CLASH successfully."  &&  gzip -d clash-linux-amd64-v3-2023.08.17.gz  &&  mv clash-linux-amd64-v3-2023.08.17 clash  &&  chmod 777 clash  &&  sudo chown 1000:1000 /usr/local/bin -R  &&  sudo mv clash /usr/local/bin/  &&  mkdir -p ~/.config/clash  &&  cd ~/.config/clash/  &&  until curl -o config.yaml "https://r0al0.no-mad-world.club/link/NfRPyEGviw3DoYWl?clash=3&extend=1"; do echo "Retrying in 1 seconds..."; sleep 1; done; echo "curl configYAML successfully." 
-sed -i '/hosts:/,/dns:/!b;/dns:/i\
-# 添加 TUN 模式配置\
-tun:\
-  enable: true\
-  stack: system # 使用系统网络栈\
-  dns-hijack:\
-    - 198.18.0.2:53\
-  auto-route: true\
-  auto-detect-interface: true\
-' config.yaml
-sed -i '/name: 🔰 选择节点/,/proxies:/c\  - name: 🔰 选择节点\n    type: url-test\n    url: '\''https://www.youtube.com/'\''\n    interval: 30\n    proxies:' config.yaml
-
-nohup clash -d ~/.config/clash/ &
-
----
-
 ### **Bash脚本开发需求文档**
 
 #### **功能要求**
-1. **文件夹检测**：脚本运行时首先检测当前执行的目录是否为 `Proxy_clash`，若不是，则脚本应立即退出。此检测不应影响后续其他执行。
+1. **文件夹检测**：
+    - 脚本运行时首先检测当前执行的目录是否为 `Proxy_clash`，若不是，则脚本应立即退出。此检测不应影响后续其他执行。
 
-2. **服务管理检测**：
-   - 检查本机是否支持 `systemd`，若支持则配置 `systemd` 服务管理。
-   - 若不支持 `systemd`，则切换为使用 `init.d` 管理服务，但 `init.d` 需手动启动和停止服务，不进行自动启动或定时操作。
+2. **二进制文件部署**：
+   - **部署 `tailscaled`**：将 `Proxy_clash` 文件夹下的 `tailscaled` 二进制文件复制并部署到 `/usr/sbin/` 目录中。
+   - **部署 `tailscale`**：将 `Proxy_clash` 文件夹下的 `tailscale` 二进制文件复制并部署到 `/usr/bin/` 目录中。
 
-3. **Clash进程控制**：
-   - 确保在任何时刻只运行一个 Clash 进程，防止多个进程同时执行。
-   - 若检测到已有 Clash 进程运行，应终止新进程启动，并提示用户手动重启服务。
+3. **配置文件部署**：
+   - **部署 `tailscaled` 配置文件**：将 `Proxy_clash/systemd` 文件夹下的 `tailscaled.defaults` 文件重命名为 `tailscaled`，并部署到 `/etc/default/` 目录中。
 
-4. **服务配置**：
-   - 在服务配置前，执行预设的初始化操作：创建配置目录 `~/.config/clash` 并下载 `config.yaml`。
-   - 若clash配置文件执行步骤均成功，才可以进行服务部署。把服务管理的配置文件自动放入正确路径后，修改正确执行权限，并启动服务。
-   - 通过 `sed` 修改配置文件以添加 TUN 模式的配置，并更改节点选择策略。
+4. **服务管理检测**：
+   - **检测服务管理工具**：
+     - 检查本机是否支持 `systemd`，若支持则配置 `systemd` 服务管理。
+     - 若不支持 `systemd`，则切换为使用 `init.d` 管理服务，确保 `tailscaled` 服务自动随开机启动。
+   - **预置配置文档**：
+     - 脚本应预置 `systemd` 和 `init.d` 的配置文档，无需依赖本地存在的配置文件。
+     - 根据检测到的服务管理工具，选择并部署相应的配置文档。
 
-5. **服务管理与启动**：
-   - 根据系统检测结果，生成相应的 `systemd` 或 `init.d` 配置文件，并自动放置到正确的服务路径。
-   - 修改权限并启动 Clash 服务。启动日志和错误日志均需保存在 `Proxy_clash` 目录下。
+5. **进程控制**：
+   - **单实例运行**：
+     - 确保在任何时刻只运行一个 `tailscaled` 进程，防止多个进程同时执行。
+     - 若检测到已有 `tailscaled` 进程运行，应终止新进程启动，并提示用户手动重启服务。
 
-6. **日志管理**：
-   - 所有执行步骤均需记录日志，日志文件保存路径为当前脚本执行的目录 `Proxy_clash`。
-   - 日志应包括操作成功、失败的详细信息，并使用时间戳标识。
+6. **服务管理与启动**：
+   - **配置文件生成与部署**：
+     - 根据系统检测结果，生成相应的 `systemd` 或 `init.d` 配置文件，并自动放置到正确的服务路径。
+   - **权限修改与服务启动**：
+     - 修改相关文件和目录的权限，确保服务能够正常运行。
+     - 启动 `tailscaled` 服务，启动日志和错误日志均需保存在 `Proxy_clash` 目录下。
 
-在部署服务前，我在bash终端手动启动clash方法如下，你可以参考：
-mkdir -p ~/.config/clash
+7. **日志管理**：
+   - **日志记录**：
+     - 所有执行步骤均需记录日志，日志文件保存路径为当前脚本执行的目录 `Proxy_clash`。
+     - 日志应包括操作成功、失败的详细信息，并使用时间戳标识。
 
-cd ~/.config/clash/ 
+8. **配置文件模板**：
+   - **`systemd` 配置模板**：
+     - 使用官方提供的 `tailscaled` `systemd` 示例配置文档作为模板。
+     - 示例配置：
+       ```ini
+       [Unit]
+       Description=Tailscale node agent
+       Documentation=https://tailscale.com/kb/
+       Wants=network-pre.target
+       After=network-pre.target NetworkManager.service systemd-resolved.service
 
-curl -o config.yaml "https://r0al0.no-mad-world.club/link/NfRPyEGviw3DoYWl?clash=3&extend=1"
+       [Service]
+       EnvironmentFile=/etc/default/tailscaled
+       ExecStart=/usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=${PORT} $FLAGS
+       ExecStopPost=/usr/sbin/tailscaled --cleanup
 
-sed -i '/hosts:/,/dns:/!b;/dns:/i\
-# 添加 TUN 模式配置\
-tun:\
-  enable: true\
-  stack: system # 使用系统网络栈\
-  dns-hijack:\
-    - 198.18.0.2:53\
-  auto-route: true\
-  auto-detect-interface: true\
-' config.yaml
+       Restart=on-failure
 
-sed -i '/name: 🔰 选择节点/,/proxies:/c\  - name: 🔰 选择节点\n    type: url-test\n    url: '\''https://www.youtube.com/'\''\n    interval: 30\n    proxies:' config.yaml
+       RuntimeDirectory=tailscale
+       RuntimeDirectoryMode=0755
+       StateDirectory=tailscale
+       StateDirectoryMode=0700
+       CacheDirectory=tailscale
+       CacheDirectoryMode=0750
+       Type=notify
 
-启动clash的方法如下：sudo clash -d ~/.config/clash/
+       [Install]
+       WantedBy=multi-user.target
+       ```
+   - **`init.d` 配置模板**：
+     - 参考上述 `systemd` 服务配置，确保 `init.d` 配置文件在功能上保持一致。
+
+#### **交付内容**
+
+- 完整的Bash脚本文件，具备上述所有功能要求。
+- `systemd` 和 `init.d` 的配置文件模板，内嵌在脚本中，供自动部署使用。
+- 使用说明文档，简要说明脚本的使用方法和注意事项。
+
+#### **注意事项**
+- 确保脚本具有足够的权限执行文件复制和服务配置操作，通常以普通用户运行脚本，请对脚本中需要root权限的命令额外添加sudo，用户会在执行脚本时完成sudo授权。
+- 在修改系统文件和服务配置前，建议备份原有配置，以防止意外错误。
+- 脚本应包含错误处理机制，确保在任何步骤失败时能够输出有用的错误信息并安全退出。
+- 保证在不同的系统环境下的兼容性，特别是 `systemd` 和 `init.d` 的差异。
 
 ### **Bash脚本代码设计与规范**
 
@@ -73,7 +90,7 @@ sed -i '/name: 🔰 选择节点/,/proxies:/c\  - name: 🔰 选择节点\n    t
 - **模块化逻辑**：将脚本的核心功能划分为若干模块，每个模块由独立的函数或函数集实现，以增强脚本的可维护性和可扩展性。确保每个模块可以单独测试和调试，便于发现和修复问题。
 
 #### **2. 代码整洁与规范**
-- **注释规范**：在每个函数和主要逻辑块前添加详细注释，说明其功能、输入参数、返回值及其用途。注释应简明扼要但信息充分，以便其他开发人员快速理解代码逻辑。
+- **注释规范**：在每个函数和主要逻辑块前添加详细英文注释，说明其功能、输入参数、返回值及其用途。注释应简明扼要但信息充分，以便其他开发人员快速理解代码逻辑。
 
 - **代码格式与排版**：保持代码风格一致，适当使用空行分隔逻辑块，以增强代码的可读性。代码缩进应统一，建议使用四个空格作为缩进单位，确保代码层次结构清晰。
 
@@ -121,3 +138,4 @@ sed -i '/name: 🔰 选择节点/,/proxies:/c\  - name: 🔰 选择节点\n    t
 - **可维护性**：采用模块化设计、统一的错误处理机制和日志记录方式，使脚本易于维护。对于新增功能，应尽量遵循已有的代码结构和风格，确保整体代码的一致性和可读性。
 
 - **用户友好性**：为了方便不熟悉计算机的用户使用，应在脚本中加入必要的用户提示，并提供默认参数值，使用户在不了解详细实现的情况下也能顺利运行脚本。同时，确保脚本具有良好的容错性，避免因用户输入错误导致脚本崩溃。
+

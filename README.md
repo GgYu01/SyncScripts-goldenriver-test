@@ -22,12 +22,12 @@ vbmeta_system.img
 vbmeta_vendor.img
 scp.img	(新增)
 tee.img	(新增)
+# set -eo pipefail   James ！！要改
+
+
 
 repo init "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0726/alps.xml
 repo init "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/0726/yocto.xml 
-
-# CVE
-git fetch ssh://gaoyx@www.goldenriver.com.cn:29420/yocto/src/hypervisor/grt refs/changes/60/460/2 && git cherry-pick FETCH_HEAD
 
 # android reboot --> shurui 
 # MTBF grt_be debug
@@ -59,14 +59,6 @@ fix coverity report  owner：武阳 测试通过，已合入
 0726_patch（BYD0802）
 无HWT改动情况下byd load 5次Android reboot系统重启
 
-# 为了Secure boot 加入公钥平台id判断
-# cpu freq
-# DhryStone 优化
-# 8676 wdt workaround
-# 春阳 utrace
+
 
 gr-nebula.py export-sdk -o /home/nebula/grt/nebula-sdk
-
-git fetch ssh://gaoyx@gerrit.grt.sy:29418/zircon refs/changes/93/11293/5 && git cherry-pick FETCH_HEAD
-cd7b3c16fa7e56db48c59797530efaa05cb65ea0
-ec065a79fa90a25cbbc174bdcd2de10430223510

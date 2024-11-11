@@ -36,7 +36,7 @@ GIT_PATHS = {
 CATEGORY_A_REPOS = ['grt']
 CATEGORY_B_REPOS = ['zircon', 'garnet']
 NUM_PROCESSES = 64
-REMOTE_SERVER = '100.64.0.3'
+REMOTE_SERVER = '100.64.0.1'
 REMOTE_USER = 'Administrator'
 REMOTE_FILE_PATH = 'C:/Users/Administrator/Downloads/MT8678-8676_Hypervisor_Release_Note.xlsx'
 LOCAL_FILE_NAME = 'MT8678-8676_Hypervisor_Release_Note.xlsx'
@@ -126,7 +126,7 @@ def handle_repo_warehouse(repo_name, repo_path, output_subdir, latest_tag, secon
         os.chdir(repo_path)
 
         # Read the manifest file to get all git repository paths
-        manifest_path = os.path.join('.repo', 'manifests', f'mt8678/grt/0904/{repo_name}.xml')
+        manifest_path = os.path.join('.repo', 'manifests', f'mt8678/grt/1001/{repo_name}.xml')
         tree = ET.parse(manifest_path)
         root = tree.getroot()
 
@@ -231,31 +231,32 @@ def handle_git_warehouse(repo_name, repo_path, category, output_subdir, latest_t
 
             # Copy all files from the specified source directory to the output directory
             source_dir = os.path.join(repo_path, 'thyp-sdk/products/mt8678-mix/prebuilt-images/')
-            for root, dirs, files in os.walk(source_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    relative_path = os.path.relpath(source_dir, repo_path)
-                    target_dir = os.path.join(output_subdir, relative_path)
-                    os.makedirs(target_dir, exist_ok=True)
-                    copy2(file_path, os.path.join(target_dir, file))
-                    zip_file.write(os.path.join(target_dir, file), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, file), output_subdir)))
-                    print_formatted_text(HTML(f"<green>Copied and compressed file: {file} </green>"))
+            # for root, dirs, files in os.walk(source_dir):
+            #     for file in files:
+            #         file_path = os.path.join(root, file)
+            #         relative_path = os.path.relpath(source_dir, repo_path)
+            #         target_dir = os.path.join(output_subdir, relative_path)
+            #         os.makedirs(target_dir, exist_ok=True)
+            #         copy2(file_path, os.path.join(target_dir, file))
+            #         zip_file.write(os.path.join(target_dir, file), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, file), output_subdir)))
+            #         print_formatted_text(HTML(f"<green>Copied and compressed file: {file} </green>"))            
             # copy2('/mnt/sso/san_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf', os.path.join(target_dir, 'nebula_kernel.elf'))
             # print_formatted_text(HTML(f"<green>Copied and compressed file: nebula_kernel.elf </green>"))
+
             # zip_file.write(os.path.join(target_dir, 'nebula_kernel.elf'), os.path.join(repo_name, os.path.relpath(os.path.join(target_dir, 'nebula_kernel.elf'), output_subdir)))            
             # copy2('/mnt/sso/san_78/grpower/workspace/nebula/snapshot.xml', os.path.join(target_dir, f'Nebula_MTK_{latest_tag}.xml'))
             # print_formatted_text(HTML(f"<green>Copied and compressed file: snapshot.xml </green>"))
 
-            zircon_elf_src = '/mnt/sso/san_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf'
-            zircon_elf_dest = os.path.join(output_subdir, os.path.relpath(source_dir, repo_path), 'nebula_kernel.elf')
-            os.makedirs(os.path.dirname(zircon_elf_dest), exist_ok=True)
-            copy2(zircon_elf_src, zircon_elf_dest)
-            if os.path.exists(zircon_elf_dest):
-                zip_file.write(zircon_elf_dest, os.path.join(repo_name, os.path.relpath(zircon_elf_dest, output_subdir)))
-                print_formatted_text(HTML(f"<green>Copied and compressed file: nebula_kernel.elf</green>"))
-            else:
-                print_formatted_text(HTML(f"<red>Error: Failed to copy zircon.elf</red>"))
-                return False
+            # zircon_elf_src = '/mnt/sso/san_78/grpower/workspace/nebula/out/build-zircon/build-venus-hee/zircon.elf'
+            # zircon_elf_dest = os.path.join(output_subdir, os.path.relpath(source_dir, repo_path), 'nebula_kernel.elf')
+            # os.makedirs(os.path.dirname(zircon_elf_dest), exist_ok=True)
+            # copy2(zircon_elf_src, zircon_elf_dest)
+            # if os.path.exists(zircon_elf_dest):
+            #     zip_file.write(zircon_elf_dest, os.path.join(repo_name, os.path.relpath(zircon_elf_dest, output_subdir)))
+            #     print_formatted_text(HTML(f"<green>Copied and compressed file: nebula_kernel.elf</green>"))
+            # else:
+            #     print_formatted_text(HTML(f"<red>Error: Failed to copy zircon.elf</red>"))
+            #     return False
 
             snapshot_xml_src = '/mnt/sso/san_78/grpower/workspace/nebula/snapshot.xml'
             snapshot_xml_dest = os.path.join(output_subdir, os.path.relpath(source_dir, repo_path), f'Nebula_MTK_{latest_tag}.xml')
@@ -352,8 +353,8 @@ def main():
     # Get the latest two tags from the Class A git repository
     class_a_repo_path = os.path.join(CODE_ROOT_DIR, GIT_PATHS[CATEGORY_A_REPOS[0]])
     latest_tag, second_latest_tag = get_latest_two_tags(class_a_repo_path)
-    # latest_tag='release-spm.mt8678_2024_0918'
-    # second_latest_tag='release-spm.mt8678_2024_0913_02'
+    # latest_tag='release-spm.mt8678_2024_1101_01'
+    # second_latest_tag='release-spm.mt8678_2024_1031_01'
     if not latest_tag or not second_latest_tag:
         print_formatted_text(HTML("<red>Error: Failed to retrieve tags.</red>"))
         return
