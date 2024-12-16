@@ -1,13 +1,22 @@
 cd ~/grt/thyp-sdk && git clean -ffd && cd ~/grpower/workspace && rm -rf buildroot-pvt8675/ nebula-ree/ && cd ~/grpower/workspace/nebula && rm -rf out && cd ~/grpower/ && source scripts/genv.sh && cd ~/grpower/ && gr-nebula.py build && gr-nebula.py export-buildroot && gr-android.py buildroot export_nebula_images -o /home/nebula/grt/thyp-sdk/products/mt8678-mix/prebuilt-images 
 cd ~/grt/thyp-sdk && git clean -ffd && ./build_all.sh
 scp ~/grt/thyp-sdk/products/mt8678-mix/out/gz.img ~/alps/out/target/product/auto8678p1_64_bsp_vm/merged/tee.img Administrator@100.64.0.1:D:/78images
-export NO_PIPENV_SHELL=1 && cd ~/grpower/ && source scripts/env.sh && gr-nebula.py update-source --branch-name main
+export NO_PIPENV_SHELL=1 && cd ~/grpower/ && source scripts/env.sh && gr-nebula.py update-source --branch-name main && \
+cd ~/grpower/workspace/nebula/zircon && \
+git checkout -f release-spm.mt8678_mtk && \
+git pull && \
+cd ~/grpower/workspace/nebula/garnet  && \
+git checkout -f release-spm.mt8678_mtk && \
+git pull && \
+cd ~/grpower && \
+git pull  && \
 cd ~/grt && git reset --hard && git clean -fdx && git pull && \
-cd ~/grt_be && git pull && \
+cd ~/grt_be && git pull 
+
 cd ~/yocto && repo forall -c "git reset --hard && git clean -fd" > /dev/null 2>&1 && \
-repo sync --no-repo-verify --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose   && \
+repo sync --no-repo-verify --force-sync --jobs 4 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose 
 cd ~/alps && repo forall -c "git reset --hard && git clean -fd " > /dev/null 2>&1 && \
-repo sync --no-repo-verify --force-sync --jobs 1 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose 
+repo sync --no-repo-verify --force-sync --jobs 4 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose 
 # 下载源码
 git clone "ssh://gaoyx@gerrit.grt.sy:29418/grpower"
 cd ~/grpower/
@@ -81,8 +90,8 @@ sudo mkdir -p /etc/docker
 sudo systemctl daemon-reload
 sudo systemctl restart docker
 
-repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/1001/alps.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
-repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/1001/yocto.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
+repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/1114/alps.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
+repo init -u "ssh://gaoyx@www.goldenriver.com.cn:29420/manifest" -b master -m mt8678/grt/1114/yocto.xml && repo sync --force-sync --jobs 30 --jobs-network=30 --jobs-checkout=32 --force-checkout --force-remove-dirty --tags --retry-fetches=15 --prune --verbose --no-repo-verify
 git clone "ssh://gaoyx@www.goldenriver.com.cn:29420/yocto/src/hypervisor/grt" --depth 2 -j 60 --single-branch --branch release-spm.mt8678_2024_1001
 jiri update -j=8 --attempts=10 --force-autoupdate=true --rebase-all=false --rebase-tracked=false --rebase-untracked=false --show-progress=true --color=auto -autoupdate=false -vv=true 
 --repo-url=https://gerrit-googlesource.proxy.ustclug.org/git-repo 

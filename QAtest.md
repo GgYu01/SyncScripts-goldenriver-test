@@ -60,3 +60,15 @@ rtt min/avg/max/mdev = 0.249/0.383/0.503/0.061 ms
 
 
 我希望执行所有涉及adb命令之前都要执行adb root
+
+
+我现在需要写一份用于测试的python脚本开发需求说明，请你帮我完成这个十分详细且系统的简体中文的开发需求文档，用于给开发团队人员，文档内容中尽量用文字详细描述需求。
+我的要求是开发一个专业、非常复杂、高度模块化、丰富可拓展性的python3.8.10脚本，我现在已有一个含有多种测试项目的python自动化测试脚本。我现在希望执行脚本时可以自动对指定Excel表格的特定工作表输入内容。excel表格名称是Hypervisor-Checklist-hypervisor测试项.xlsx，在~路径下。我对脚本中信息填入有较高要求，请你符合我要求的填入规范。
+脚本应该获取当天的月份和日期。我工作表的名称为：11/11测试报告，意思是11月11日的测试报告。这个月份和日期我希望可以保留手动填写以供debug的功能。
+具体需要填写的内容如下：
+cpu_check.py的测试中，J7格子需要输入本次检测到的cpu数量，格式类似为 "3 cores"。如果检测符合预期，则在K7中输入 PASS，请注意这个测试项是分yocto vm和 Android vm 的。测试不通过K7输入Failed。J7 填入 yocto 的检测数据，K7填入yocto 测试结果；J8 填入 Android 的检测数据，K8填入 Android 测试结果。
+vcpu_check.py的测试中，若测试通过，J10格子需要输入CPU0-7信息均可正常显示，K10输入PASS，若测试不通过J10格子输入CPU0-7信息未正常显示，K10输入Failed。
+vm_control.py的测试中，若测试通过，J11格子填入Android正常启动，K11格子填入PASS。测试不通过J11格子填入Android未正常启动，K11格子填入Failed。
+bandwidth_test.py测试中，J22填入测试的带宽结果，你之前{'Android_to_Yocto': 7440.0, 'Yocto_to_Android': 7690.0}的输出方式我觉得不太美观，请把终端输出和excel表格填写内容格式均改为： Android_to_Yocto : 带宽数值 带宽单位 excel表格中在同一格子内换行 再输入 Yocto_to_Android : 带宽数值 带宽单位 。终端输出也要保证美观排版和换行。然后K22填入PASS，若测试失败填入Failed。
+latency_test.py J23填入测试的带宽结果，你之前{'Yocto_to_Android': {'min': 0.294, 'avg': 0.368, 'max': 1.096, 'mdev': 0.082}, 'Android_to_Yocto': {'min': 0.184, 'avg': 0.256, 'max': 0.434, 'mdev': 0.047}}的输出方式我觉得不太美观，请把终端输出和excel表格填写内容格式均改为： Yocto_to_Android : 最大值 最小值等测试结果，测试结果要有单位。 excel表格中在同一格子内换行 再输入 Android_to_Yocto : 最大值 最小值等测试结果，测试结果要有单位。终端输出也要保证美观排版和换行。然后K23填入PASS，若测试失败填入Failed。
+reboot_test.py测试中，J24请填入重启yocto VM的循环重启成功次数，格式为  连续重启 '重启次数' 次正常 若测试通过则K24输入pass，J25请填入重启Android VM的循环重启成功次数，格式为  连续重启 '重启次数' 次正常 若测试通过则K25输入pass，反之则在对应的表格填入成功重启的次数，和对应的表格填入Failed

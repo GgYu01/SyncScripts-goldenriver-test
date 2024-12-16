@@ -5,6 +5,8 @@ chmod 777 /usr/bin/headscale
 tailscale up --login-server=http://112.30.116.152:27110 --accept-routes=true --accept-dns=false --advertise-routes=192.168.20.0/24 --reset --force-reauth --authkey 307941c958da62a45727006ddcca149db8dc96240db94f33
 tailscale up --login-server=http://112.30.116.152:27110 --reset --accept-routes=true --force-reauth --authkey 047077e92b23de55841dffbc762c445fd1cbe2d065db991e 
 
+nohup headscale serve > /root/headscale.log 2>&1 & 
+
 /etc/derp/derper -hostname derp.hefei.com -a :12345 -http-port 33446 -certmode manual -certdir /etc/derp
 
 service passwall start
